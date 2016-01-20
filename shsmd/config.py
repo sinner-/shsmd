@@ -1,7 +1,18 @@
-class Configuration:
+''' x '''
+class Configuration(object):
+    ''' x '''
     def __init__(self):
-        self.DATABASE = "shsmd.db"
-        self.DEBUG = True
-        self.SCHEMA = "../schema.sql"
+        ''' x '''
+        self.database = "shsmd.db"
+        self.debug = True
+        self.schema = "../schema.sql"
 
-CONF = Configuration()
+    def get(self):
+        ''' x '''
+        return self
+
+    def set(self):
+        ''' x '''
+        pass
+
+CONF = Configuration().get()

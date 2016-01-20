@@ -12,55 +12,18 @@
 
 from base64 import b64decode
 from base64 import b64encode
-from json import loads as jsonloads
-import sqlite3
+import json
 import nacl.utils
 from nacl.signing import SignedMessage
 from nacl.signing import VerifyKey
 from nacl.public import PublicKey
 from nacl.encoding import HexEncoder
 from nacl.encoding import RawEncoder
-from flask import Flask
 from flask import request
-from flask import jsonify
-from flask import g
 from flask_restful import abort
-
-app = Flask(__name__)
-app.config.from_object(__name__)
-
-DATABASE = 'shsmd.db'
-DEBUG = True
-
-def get_db():
-    ''' xxx '''
-    database = getattr(g, '_database', None)
-    if database is None:
-        database = g._database = sqlite3.connect(DATABASE)
-        database.row_factory = sqlite3.Row
-    return database
-
-@app.teardown_appcontext
-def close_connection(exception):
-    ''' xxx '''
-    database = getattr(g, '_database', None)
-    if database is not None:
-        database.close()
-
-def query_db(query, args=(), one=False):
-    ''' xxx '''
-    cur = get_db().execute(query, args)
-    results = cur.fetchall()
-    cur.close()
-    return (results[0] if results else None) if one else results
-
-def init_db():
-    ''' xxx '''
-    with app.app_context():
-        database = get_db()
-        with app.open_resource('schema.sql', mode='r') as db_file:
-            database.cursor().executescript(db_file.read())
-        database.commit()
+from shsmd import app
+from shsmd.db import get_db
+from shsmd.db import query_db
 
 @app.route('/api/v1.0/register', methods=['POST'])
 def register():
@@ -118,7 +81,7 @@ def register():
               request.json['master_verify_key']])
     get_db().commit()
 
-    return jsonify({'username': request.json['username']}), 201
+    return json.dumps({'username': request.json['username']}), 201
 
 def reconstruct_signed_message(signed_message):
     ''' xxx '''
@@ -221,7 +184,7 @@ def add_device():
               device_public_key.message])
     get_db().commit()
 
-    return jsonify({'username': request.json['username']}), 201
+    return json.dumps({'username': request.json['username']}), 201
 
 @app.route('/api/v1.0/get-device-key', methods=['POST'])
 def get_device_key():
@@ -268,7 +231,7 @@ def get_device_key():
                         [destination_username.message]):
         device_public_keys.append(row['device_public_key'])
 
-    return jsonify({'device_public_keys': device_public_keys}), 200
+    return json.dumps({'device_public_keys': device_public_keys}), 200
 
 @app.route('/api/v1.0/send-message', methods=['POST'])
 def send_message():
@@ -336,7 +299,7 @@ def send_message():
               b64encode(message_public_key.message)])
     get_db().commit()
 
-    for destination_username in jsonloads(destination_usernames.message)['destination_usernames']:
+    for destination_username in json.loads(destination_usernames.message)['destination_usernames']:
 
         for row in query_db('''
                             SELECT device_verify_key
@@ -351,7 +314,7 @@ def send_message():
             get_db().commit()
 
 
-    return jsonify({'username': request.json['username']}), 201
+    return json.dumps({'username': request.json['username']}), 201
 
 @app.route('/api/v1.0/get-messages', methods=['POST'])
 def get_messages():
@@ -402,9 +365,4 @@ def get_messages():
             messages[row[0]] = row[1]
             #TODO: delete message from database
 
-    return jsonify({'messages': messages}), 200
-
-if __name__ == '__main__':
-    if DEBUG:
-        init_db()
-    app.run(debug=DEBUG)
+    return json.dumps({'messages': messages}), 200
