@@ -179,8 +179,8 @@ def add_device():
     query_db('''
              INSERT INTO devices
              VALUES(?, ?, ?);''',
-             [request.json['username'],
-              device_verify_key.message,
+             [device_verify_key.message,
+              request.json['username'],
               device_public_key.message])
     get_db().commit()
 
