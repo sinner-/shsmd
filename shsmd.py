@@ -13,7 +13,6 @@
 from base64 import b64decode
 from base64 import b64encode
 from json import loads as jsonloads
-from contextlib import closing
 import sqlite3
 import nacl.utils
 from nacl.signing import SignedMessage
@@ -24,9 +23,44 @@ from nacl.encoding import RawEncoder
 from flask import Flask
 from flask import request
 from flask import jsonify
+from flask import g
 from flask_restful import abort
 
 app = Flask(__name__)
+app.config.from_object(__name__)
+
+DATABASE = 'shsmd.db'
+DEBUG = True
+
+def get_db():
+    ''' xxx '''
+    database = getattr(g, '_database', None)
+    if database is None:
+        database = g._database = sqlite3.connect(DATABASE)
+        database.row_factory = sqlite3.Row
+    return database
+
+@app.teardown_appcontext
+def close_connection(exception):
+    ''' xxx '''
+    database = getattr(g, '_database', None)
+    if database is not None:
+        database.close()
+
+def query_db(query, args=(), one=False):
+    ''' xxx '''
+    cur = get_db().execute(query, args)
+    results = cur.fetchall()
+    cur.close()
+    return (results[0] if results else None) if one else results
+
+def init_db():
+    ''' xxx '''
+    with app.app_context():
+        database = get_db()
+        with app.open_resource('schema.sql', mode='r') as db_file:
+            database.cursor().executescript(db_file.read())
+        database.commit()
 
 @app.route('/api/v1.0/register', methods=['POST'])
 def register():
@@ -57,42 +91,37 @@ def register():
         abort(400,
               message="JSON request missing master_verify_key field.")
 
-    db_path = 'shsmd.db'
-    conn = sqlite3.connect(db_path)
-
     #check if user exists already
-    with closing(conn.cursor()) as cursor:
-        cursor.execute('''
-                       SELECT username
-                       FROM users
-                       WHERE username=?;''',
-                       (request.json['username'],))
-        exists = cursor.fetchone()
-        if exists is not None:
-            abort(422, message="username already registered.")
+    username = query_db('''
+                        SELECT username
+                        FROM users
+                        WHERE username = ?;''',
+                        [request.json['username']],
+                        one=True)
+    if username is not None:
+        abort(422, message="username already registered.")
 
     #check if provided key is a valid key
     try:
         master_verify_key = VerifyKey(
             request.json['master_verify_key'],
             encoder=HexEncoder)
-
     except TypeError:
         abort(400,
               message="The provided master_verify_key is not valid.")
 
     #otherwise, add user
-    with conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute('''
-                           INSERT INTO users
-                           VALUES(?, ?);''',
-                           (request.json['username'],
-                            request.json['master_verify_key']))
+    query_db('''
+             INSERT INTO users
+             VALUES(?, ?);''',
+             [request.json['username'],
+              request.json['master_verify_key']])
+    get_db().commit()
 
     return jsonify({'username': request.json['username']}), 201
 
 def reconstruct_signed_message(signed_message):
+    ''' xxx '''
     tmp_encoder = RawEncoder
     try:
         tmp_signed_message = tmp_encoder.encode(b64decode(signed_message))
@@ -142,21 +171,17 @@ def add_device():
         abort(400,
               message="JSON request missing device_public_key field.")
 
-    db_path = 'shsmd.db'
-    conn = sqlite3.connect(db_path)
-
     #check if user exists already
     #TODO: check for mismatch between existing keys and new keys
     #TODO: e.g. same device_verify_key but new device_public_key
-    with closing(conn.cursor()) as cursor:
-        cursor.execute('''
-                       SELECT master_verify_key
-                       FROM users
-                       WHERE username=?;''',
-                       (request.json['username'],))
-        exists = cursor.fetchone()
-        if exists is None:
-            abort(422, message="Username does not exist.")
+    stored_key = query_db('''
+                          SELECT master_verify_key
+                          FROM users
+                          WHERE username = ?;''',
+                          [request.json['username']],
+                          one=True)
+    if stored_key is None:
+        abort(422, message="Username does not exist.")
 
     #check if input is valid
     device_verify_key = reconstruct_signed_message(request.json['device_verify_key'])
@@ -174,7 +199,7 @@ def add_device():
               message="The provided device_public_key is not valid.")
 
     #check to ensure keys are signed with master key
-    master_verify_key = VerifyKey(exists[0], encoder=HexEncoder)
+    master_verify_key = VerifyKey(stored_key['master_verify_key'], encoder=HexEncoder)
 
     try:
         master_verify_key.verify(device_verify_key)
@@ -188,20 +213,20 @@ def add_device():
               message="Signature for device_public_key is corrupt or invalid.")
 
     #otherwise, add device
-    with conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute('''
-                           INSERT INTO devices
-                           VALUES(?, ?, ?);''',
-                           (request.json['username'],
-                            device_verify_key.message,
-                            device_public_key.message))
+    query_db('''
+             INSERT INTO devices
+             VALUES(?, ?, ?);''',
+             [request.json['username'],
+              device_verify_key.message,
+              device_public_key.message])
+    get_db().commit()
 
     return jsonify({'username': request.json['username']}), 201
 
 @app.route('/api/v1.0/get-device-key', methods=['POST'])
 def get_device_key():
 
+    ''' xxx '''
     if not request.json:
         abort(400,
               message="JSON request body missing or incorrect Content-Type.")
@@ -215,23 +240,19 @@ def get_device_key():
         abort(400,
               message="JSON request missing destination_username field.")
 
-    db_path = 'shsmd.db'
-    conn = sqlite3.connect(db_path)
-
     #check if user exists already
-    with closing(conn.cursor()) as cursor:
-        cursor.execute('''
-                       SELECT device_verify_key
-                       FROM devices
-                       WHERE username=?;''',
-                       (request.json['username'],))
-        exists = cursor.fetchone()
-        if exists is None:
-            abort(422, message="Username does not exist.")
+    stored_key = query_db('''
+                          SELECT device_verify_key
+                          FROM devices
+                          WHERE username = ?;''',
+                          [request.json['username']],
+                          one=True)
+    if stored_key is None:
+        abort(422, message="Username does not exist.")
 
     destination_username = reconstruct_signed_message(request.json['destination_username'])
 
-    device_verify_key = VerifyKey(exists[0], encoder=HexEncoder)
+    device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
 
     try:
         device_verify_key.verify(destination_username)
@@ -240,18 +261,18 @@ def get_device_key():
               message="Signature for provided username is corrupt or invalid.")
 
     device_public_keys = []
-    with closing(conn.cursor()) as cursor:
-        for row in cursor.execute('''
-                                  SELECT device_public_key
-                                  FROM devices
-                                  WHERE username=?;''',
-                                  (destination_username.message,)):
-            device_public_keys.append(row[0])
+    for row in query_db('''
+                        SELECT device_public_key
+                        FROM devices
+                        WHERE username=?;''',
+                        [destination_username.message]):
+        device_public_keys.append(row['device_public_key'])
 
     return jsonify({'device_public_keys': device_public_keys}), 200
 
 @app.route('/api/v1.0/send-message', methods=['POST'])
 def send_message():
+    ''' xxx '''
     if not request.json:
         abort(400,
               message="JSON request body missing or incorrect Content-Type.")
@@ -271,19 +292,15 @@ def send_message():
         abort(400,
               message="JSON request missing message_public_key field.")
 
-    db_path = 'shsmd.db'
-    conn = sqlite3.connect(db_path)
-
     #check if user exists already
-    with closing(conn.cursor()) as cursor:
-        cursor.execute('''
-                       SELECT device_verify_key
-                       FROM devices
-                       WHERE username=?;''',
-                       (request.json['username'],))
-        exists = cursor.fetchone()
-        if exists is None:
-            abort(422, message="Username does not exist.")
+    stored_key = query_db('''
+                          SELECT device_verify_key
+                          FROM devices
+                          WHERE username = ?;''',
+                          [request.json['username']],
+                          one=True)
+    if stored_key is None:
+        abort(422, message="Username does not exist.")
 
     destination_usernames = reconstruct_signed_message(request.json['destination_usernames'])
 
@@ -295,7 +312,7 @@ def send_message():
     except TypeError:
         abort(400, message='Provided message_public_key is not a valid public key.')
 
-    device_verify_key = VerifyKey(exists[0], encoder=HexEncoder)
+    device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
 
     try:
         device_verify_key.verify(destination_usernames)
@@ -311,38 +328,35 @@ def send_message():
         abort(400, message="Signature for provided message_public_key is corrupt or invalid.")
 
     message_id = b64encode(message_contents.signature)
-    with conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute('''
-                           INSERT INTO messages
-                           VALUES(?, ?, ?);''',
-                           (message_id,
-                            b64encode(message_contents.message),
-                            b64encode(message_public_key.message)))
+    query_db('''
+             INSERT INTO messages
+             VALUES(?, ?, ?);''',
+             [message_id,
+              b64encode(message_contents.message),
+              b64encode(message_public_key.message)])
+    get_db().commit()
 
     for destination_username in jsonloads(destination_usernames.message)['destination_usernames']:
 
-        rows = []
-        with closing(conn.cursor()) as cursor:
-            for row in cursor.execute('''
-                                      SELECT device_verify_key
-                                      FROM devices
-                                      WHERE username=?;''',
-                                      (destination_username,)):
-                rows.append((row[0], message_id))
+        for row in query_db('''
+                            SELECT device_verify_key
+                            FROM devices
+                            WHERE username=?;''',
+                            [destination_username]):
+            query_db('''
+                     INSERT INTO message_recipients
+                     VALUES(?, ?);''',
+                     [row['device_verify_key'],
+                      message_id])
+            get_db().commit()
 
-        with conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.executemany('''
-                                   INSERT INTO message_recipients
-                                   VALUES(?, ?);''',
-                                   (rows))
 
     return jsonify({'username': request.json['username']}), 201
 
 @app.route('/api/v1.0/get-messages', methods=['POST'])
 def get_messages():
 
+    ''' xxx '''
     if not request.json:
         abort(400,
               message="JSON request body missing or incorrect Content-Type.")
@@ -356,23 +370,19 @@ def get_messages():
         abort(400,
               message="JSON request missing signed_device_verify_key field.")
 
-    db_path = 'shsmd.db'
-    conn = sqlite3.connect(db_path)
-
     #check if user exists already
-    with closing(conn.cursor()) as cursor:
-        cursor.execute('''
-                       SELECT device_verify_key
-                       FROM devices
-                       WHERE username=?;''',
-                       (request.json['username'],))
-        exists = cursor.fetchone()
-        if exists is None:
-            abort(422, message="Username does not exist.")
+    stored_key = query_db('''
+                          SELECT device_verify_key
+                          FROM devices
+                          WHERE username = ?;''',
+                          [request.json['username']],
+                          one=True)
+    if stored_key is None:
+        abort(422, message="Username does not exist.")
 
     signed_device_verify_key = reconstruct_signed_message(request.json['signed_device_verify_key'])
 
-    device_verify_key = VerifyKey(exists[0], encoder=HexEncoder)
+    device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
 
     try:
         device_verify_key.verify(signed_device_verify_key)
@@ -380,21 +390,21 @@ def get_messages():
         abort(400,
               message="Signature for provided username is corrupt or invalid.")
 
-    with closing(conn.cursor()) as cursor:
-        exists = None
-        messages = {}
-        for row in cursor.execute('''
-                                  SELECT message_public_key, message_contents
-                                  FROM messages
-                                  JOIN message_recipients
-                                  ON messages.message_id = message_recipients.message_id
-                                  WHERE device_verify_key=?;''',
-                                  (signed_device_verify_key.message,)):
-            if row is not None:
-                messages[row[0]] = row[1]
+    messages = {}
+    for row in query_db('''
+                        SELECT message_public_key, message_contents
+                        FROM messages
+                        JOIN message_recipients
+                        ON messages.message_id = message_recipients.message_id
+                        WHERE device_verify_key=?;''',
+                        [signed_device_verify_key.message]):
+        if row is not None:
+            messages[row[0]] = row[1]
             #TODO: delete message from database
 
     return jsonify({'messages': messages}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    if DEBUG:
+        init_db()
+    app.run(debug=DEBUG)
