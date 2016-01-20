@@ -37,5 +37,5 @@ It is necessary to implement public access to the server through at least one of
 ### Standalone daemon (development only)
   * (from inside shsmd directory)
   * `source bin/activate`
-  * `sqlite3 shsmd.db < createdb.sql` 
-  * `bin/python shsmd.py`
+  * `bin/python run.py`
+    * NOTE: The database will be wiped on each run while DEBUG=True

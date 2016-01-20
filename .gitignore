@@ -6,3 +6,6 @@ include
 
 #db
 shsmd.db
+
+#pyc
+*.pyc
