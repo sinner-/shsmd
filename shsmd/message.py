@@ -17,7 +17,7 @@ class Message(Resource):
     def post(self):
         ''' x '''
         parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
+        parser.add_argument('device_verify_key', type=str)
         parser.add_argument('destination_usernames', type=str)
         parser.add_argument('message_public_key', type=str)
         parser.add_argument('message_contents', type=str)
@@ -27,8 +27,8 @@ class Message(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE username = ?;''',
-                              [args['username']],
+                              WHERE device_verify_key = ?;''',
+                              [args['device_verify_key']],
                               one=True)
         if stored_key is None:
             abort(422, message="Username does not exist.")
@@ -82,4 +82,4 @@ class Message(Resource):
                 get_db().commit()
 
 
-        return args['username'], 201
+        return args['device_verify_key'], 201

@@ -14,7 +14,7 @@ class KeyList(Resource):
     def post(self):
         ''' x '''
         parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
+        parser.add_argument('device_verify_key', type=str)
         parser.add_argument('destination_username', type=str)
         args = parser.parse_args()
 
@@ -23,11 +23,11 @@ class KeyList(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE username = ?;''',
-                              [args['username']],
+                              WHERE device_verify_key = ?;''',
+                              [args['device_verify_key']],
                               one=True)
         if stored_key is None:
-            abort(422, message="Username does not exist.")
+            abort(422, message="Device does not exist.")
 
         destination_username = reconstruct_signed_message(args['destination_username'])
 

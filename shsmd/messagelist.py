@@ -13,7 +13,7 @@ class MessageList(Resource):
     def post(self):
         ''' x '''
         parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
+        parser.add_argument('device_verify_key', type=str)
         parser.add_argument('signed_device_verify_key', type=str)
         args = parser.parse_args()
 
@@ -21,8 +21,8 @@ class MessageList(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE username = ?;''',
-                              [args['username']],
+                              WHERE device_verify_key = ?;''',
+                              [args['device_verify_key']],
                               one=True)
         if stored_key is None:
             abort(422, message="Username does not exist.")
