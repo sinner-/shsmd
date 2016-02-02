@@ -22,8 +22,6 @@ class Device(Resource):
         args = parser.parse_args()
 
         #check if user exists already
-        #TODO: check for mismatch between existing keys and new keys
-        #TODO: e.g. same device_verify_key but new device_public_key
         stored_key = query_db('''
                               SELECT master_verify_key
                               FROM users

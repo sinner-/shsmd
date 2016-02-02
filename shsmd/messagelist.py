@@ -56,7 +56,7 @@ class MessageList(Resource):
                              JOIN message_recipients
                              ON messages.message_id = message_recipients.message_id
                              WHERE device_verify_key=?);''',
-                             [signed_device_verify_key.message])
+                         [signed_device_verify_key.message])
                 query_db('''
                          DELETE FROM message_recipients
                          WHERE device_verify_key=?;''',

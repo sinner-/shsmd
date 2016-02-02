@@ -19,7 +19,6 @@ class KeyList(Resource):
         args = parser.parse_args()
 
         #check if user exists already
-        #TODO: this should be WHERE device_verify_key=
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
