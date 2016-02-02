@@ -6,6 +6,7 @@ import nacl.utils
 from nacl.signing import VerifyKey
 from nacl.encoding import HexEncoder
 from shsmd.db import query_db
+from shsmd.db import get_db
 from shsmd.util import reconstruct_signed_message
 
 class MessageList(Resource):
@@ -47,6 +48,19 @@ class MessageList(Resource):
                             [signed_device_verify_key.message]):
             if row is not None:
                 messages[row[0]] = row[1]
-                #TODO: delete message from database
+                query_db('''
+                         DELETE FROM messages
+                         WHERE message_public_key
+                         IN (SELECT message_public_key
+                             FROM messages
+                             JOIN message_recipients
+                             ON messages.message_id = message_recipients.message_id
+                             WHERE device_verify_key=?);''',
+                             [signed_device_verify_key.message])
+                query_db('''
+                         DELETE FROM message_recipients
+                         WHERE device_verify_key=?;''',
+                         [signed_device_verify_key.message])
+                get_db().commit()
 
         return {'messages': messages}
