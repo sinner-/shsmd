@@ -48,15 +48,15 @@ class MessageList(Resource):
                             [signed_device_verify_key.message]):
             if row is not None:
                 messages[row[0]] = row[1]
-                query_db('''
-                         DELETE FROM messages
-                         WHERE message_public_key
-                         IN (SELECT message_public_key
-                             FROM messages
-                             JOIN message_recipients
-                             ON messages.message_id = message_recipients.message_id
-                             WHERE device_verify_key=?);''',
-                         [signed_device_verify_key.message])
+                #query_db('''
+                #         DELETE FROM messages
+                #         WHERE message_public_key
+                #         IN (SELECT message_public_key
+                #            FROM messages
+                #             JOIN message_recipients
+                #             ON messages.message_id = message_recipients.message_id
+                #             WHERE device_verify_key=?);''',
+                #         [signed_device_verify_key.message])
                 query_db('''
                          DELETE FROM message_recipients
                          WHERE device_verify_key=?;''',
