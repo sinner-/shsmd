@@ -18,3 +18,6 @@ CREATE TABLE message_recipients (
     device_verify_key TEXT PRIMARY KEY NOT NULL,
     message_id TEXT NOT NULL,
     FOREIGN KEY(message_id) REFERENCES messages(message_id));
+CREATE INDEX users_username ON users (username);
+CREATE INDEX devices_username ON devices (username);
+CREATE INDEX devices_verify_key ON devices (device_verify_key);
