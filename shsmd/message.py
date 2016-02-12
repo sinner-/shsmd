@@ -45,10 +45,22 @@ class Message(Resource):
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('device_verify_key', type=str)
-        parser.add_argument('destination_usernames', type=str)
-        parser.add_argument('message_public_key', type=str)
-        parser.add_argument('message_contents', type=str)
+        parser.add_argument('device_verify_key',
+                            type=str,
+                            required=True,
+                            help="device_verify_key is either blank or incorrect type.")
+        parser.add_argument('destination_usernames',
+                            type=str,
+                            required=True,
+                            help="destination_usernames is either blank or incorrect type.")
+        parser.add_argument('message_public_key',
+                            type=str,
+                            required=True,
+                            help="message_public_key is either blank or incorrect type.")
+        parser.add_argument('message_contents',
+                            type=str,
+                            required=True,
+                            help="message_contents is either blank or incorrect type.")
         args = parser.parse_args()
 
         #check if user exists already
@@ -59,7 +71,7 @@ class Message(Resource):
                               [args['device_verify_key']],
                               one=True)
         if stored_key is None:
-            abort(422, message="Username does not exist.")
+            abort(422, message="Device does not exist.")
 
         destination_usernames = reconstruct_signed_message(args['destination_usernames'])
 

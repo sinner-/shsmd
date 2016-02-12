@@ -38,9 +38,18 @@ class Device(Resource):
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
-        parser.add_argument('device_verify_key', type=str)
-        parser.add_argument('device_public_key', type=str)
+        parser.add_argument('username',
+                            type=str,
+                            required=True,
+                            help="username is either blank or incorrect type.")
+        parser.add_argument('device_verify_key',
+                            type=str,
+                            required=True,
+                            help="device_verify_key is either blank or incorrect type.")
+        parser.add_argument('device_public_key',
+                            type=str,
+                            required=True,
+                            help="device_public_key is either blank or incorrect type.")
         args = parser.parse_args()
 
         #check if user exists already

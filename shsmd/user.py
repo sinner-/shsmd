@@ -33,8 +33,14 @@ class User(Resource):
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
-        parser.add_argument('master_verify_key', type=str)
+        parser.add_argument('username',
+                            type=str,
+                            required=True,
+                            help="username is either blank or incorrect type.")
+        parser.add_argument('master_verify_key',
+                            type=str,
+                            required=True,
+                            help="master_verify_key is either blank or incorrect type.")
         args = parser.parse_args()
 
         #check if user exists already

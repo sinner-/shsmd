@@ -30,16 +30,22 @@ class MessageList(Resource):
             Returns:
                 HTTP 422: If the device_verify_key provided by the user does not exist.
 
-                HTTP 400: If the provided signed_device_verify_key is not signed by the 
+                HTTP 400: If the provided signed_device_verify_key is not signed by the
                 correct device_verify_key provided during device registration.
 
-                messages (dict): A dictionary containing all messages to be delivered to 
+                messages (dict): A dictionary containing all messages to be delivered to
                 the requested device.
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('device_verify_key', type=str)
-        parser.add_argument('signed_device_verify_key', type=str)
+        parser.add_argument('device_verify_key',
+                            type=str,
+                            required=True,
+                            help="device_verify_key is either blank or incorrect type.")
+        parser.add_argument('signed_device_verify_key',
+                            type=str,
+                            required=True,
+                            help="signed_device_verify_key is either blank or incorrect type.")
         args = parser.parse_args()
 
         #check if user exists already
@@ -50,7 +56,7 @@ class MessageList(Resource):
                               [args['device_verify_key']],
                               one=True)
         if stored_key is None:
-            abort(422, message="Username does not exist.")
+            abort(422, message="Device does not exist.")
 
         signed_device_verify_key = reconstruct_signed_message(args['signed_device_verify_key'])
 
