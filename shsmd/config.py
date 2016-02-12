@@ -1,18 +1,34 @@
-''' x '''
+""" shsmd
+"""
+
 class Configuration(object):
-    ''' x '''
+    """ Configuration class for shsmd.
+
+        Attributes:
+            database  (str): Path to sqlite database.
+            debug (boolean): Toggle to enable debug.
+            schema    (str): Path to sqlite schema.
+    """
+
     def __init__(self):
-        ''' x '''
+        """ Configuration class initialisation.
+
+            Currently all values are hardcoded.
+        """
+
         self.database = "shsmd.db"
         self.debug = True
         self.schema = "../schema.sql"
 
     def get(self):
-        ''' x '''
+        """ Return configuration object.
+        """
+
         return self
 
     def set(self):
-        ''' x '''
+        """ Mutator method, currently does nothing.
+        """
         pass
 
 CONF = Configuration().get()

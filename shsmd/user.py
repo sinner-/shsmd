@@ -1,4 +1,6 @@
-''' x '''
+""" shsmd
+"""
+
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -8,9 +10,28 @@ from shsmd.db import query_db
 from shsmd.db import get_db
 
 class User(Resource):
-    ''' x '''
+    """ flask restful class for users.
+
+        Currentl only handles user registration via HTTP POST.
+    """
+
     def post(self):
-        ''' x '''
+        """ user registration method.
+
+            Args:
+                username          (str): Desired username to register with shsmd.
+                master_verify_key (str): NaCl verification key for adding new devices.
+
+            Returns:
+                HTTP 422: If the desired username is already registered.
+
+                HTTP 400: If the provided master_verify_key is not a valid NaCl verify
+                key.
+
+                username, HTTP 201: If the user registration was successful.
+
+        """
+
         parser = reqparse.RequestParser()
         parser.add_argument('username', type=str)
         parser.add_argument('master_verify_key', type=str)

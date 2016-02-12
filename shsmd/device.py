@@ -1,5 +1,6 @@
-#!/bin/python
-''' x '''
+""" shsmd
+"""
+
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -12,9 +13,30 @@ from shsmd.db import get_db
 from shsmd.util import reconstruct_signed_message
 
 class Device(Resource):
-    ''' x '''
+    """ flask restful class for devices.
+
+        Currently only handles device registration via HTTP POST.
+    """
+
     def post(self):
-        ''' x '''
+        """ device registration method.
+
+            Args:
+                username          (str): Username the device will be registered against.
+                device_verify_key (str): NaCl verification key for the device.
+                device_public_key (str): NaCl public key for the device.
+
+            Returns:
+                HTTP 422: If the username the user has requested to register the device
+                under does not exist.
+
+                HTTP 400: If either device_public_key or device_verify_key is not a valid
+                NaCl key, or if any of the provided keys are not signed by the master
+                verification key provided during user registration.
+
+                device_verify_key, HTTP 201: If the device registration was successful.
+        """
+
         parser = reqparse.RequestParser()
         parser.add_argument('username', type=str)
         parser.add_argument('device_verify_key', type=str)

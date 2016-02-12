@@ -1,4 +1,6 @@
-''' x '''
+""" shsmd
+"""
+
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -9,10 +11,31 @@ from shsmd.db import query_db
 from shsmd.util import reconstruct_signed_message
 
 class KeyList(Resource):
-    ''' x '''
+    """ flask restful class for fetching the list of each
+        device_public_key associated with a user.
+
+        Currently only handles fetching of keys via HTTP POST.
+    """
 
     def post(self):
-        ''' x '''
+        """ key fetching method.
+
+            Args:
+                device_verify_key    (str): NaCl verification key for the device the user
+                is sending the query as.
+                destination_username (str): base64 encoded, signed destination username.
+
+            Returns:
+                HTTP 422: If the device_verify_key provided by the user does not exist.
+
+                HTTP 400: If the provided destination_username is not signed by the
+                correct device_verify_key provided during device registration.
+
+                device_public_keys (dict): A dictionary containing the list of all
+                device_public_key entries that corresponded to the requested user.
+
+        """
+
         parser = reqparse.RequestParser()
         parser.add_argument('device_verify_key', type=str)
         parser.add_argument('destination_username', type=str)

@@ -1,4 +1,6 @@
-''' x '''
+""" shsmd
+"""
+
 import json
 from base64 import b64encode
 from flask_restful import Resource
@@ -13,9 +15,35 @@ from shsmd.db import get_db
 from shsmd.util import reconstruct_signed_message
 
 class Message(Resource):
-    ''' x '''
+    """ flask restful class for sending a message to a list of destination usernames.
+
+        Currently only handles sending a message via HTTP POST.
+    """
+
     def post(self):
-        ''' x '''
+        """ message sending method.
+
+            Args:
+                device_verify_key     (str): NaCl verification key for the device the user
+                is sending the query as.
+                destination_usernames (str): base64 encoded, signed, JSON encapsulated
+                list of destination usernames.
+                message_public_key    (str): base64 encoded, signed, ephemeral public
+                key that was used to encrypt the message.
+                message_contents      (str): base64 encoded, signed message contents.
+
+            Returns:
+                HTTP 422: If the device_verify_key provided by the user does not exist.
+
+                HTTP 400: If the provided destination_usernames, message_public_key or
+                message_contents is not signed by the correct device_verify_key provided
+                during device registration, or if the provided message_public_key is not
+                a valid NaCl public key.
+
+                device_verify_key, HTTP 201: If the message was sent successfully.
+
+        """
+
         parser = reqparse.RequestParser()
         parser.add_argument('device_verify_key', type=str)
         parser.add_argument('destination_usernames', type=str)

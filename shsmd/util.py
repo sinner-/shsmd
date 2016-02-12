@@ -1,4 +1,5 @@
-''' x '''
+""" shsmd
+"""
 from base64 import b64decode
 from nacl.encoding import RawEncoder
 from nacl.signing import SignedMessage
@@ -6,7 +7,10 @@ import nacl.utils
 from flask_restful import abort
 
 def reconstruct_signed_message(signed_message):
-    ''' xxx '''
+    """ hacky method for reconstructing signed messages as
+        a PyNaCl SignedMessage object.
+    """
+
     tmp_encoder = RawEncoder
     try:
         tmp_signed_message = tmp_encoder.encode(b64decode(signed_message))

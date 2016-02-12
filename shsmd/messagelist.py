@@ -1,4 +1,6 @@
-''' x '''
+""" shsmd
+"""
+
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -10,9 +12,31 @@ from shsmd.db import get_db
 from shsmd.util import reconstruct_signed_message
 
 class MessageList(Resource):
-    ''' x '''
+    """ flask restful class for delivering all messages for a requested device.
+
+        Currently only handles delivering of messages via HTTP POST.
+    """
+
     def post(self):
-        ''' x '''
+        """ message delivery method.
+
+            Args:
+                device_verify_key        (str): NaCl verification for the device the user
+                is sending the query as.
+                signed_device_verify_key (str): base64 encoded, signed device_verify_key to
+                ensure that the user is only fetching messages for devices which they posess
+                the full device verification keypair for.
+
+            Returns:
+                HTTP 422: If the device_verify_key provided by the user does not exist.
+
+                HTTP 400: If the provided signed_device_verify_key is not signed by the 
+                correct device_verify_key provided during device registration.
+
+                messages (dict): A dictionary containing all messages to be delivered to 
+                the requested device.
+        """
+
         parser = reqparse.RequestParser()
         parser.add_argument('device_verify_key', type=str)
         parser.add_argument('signed_device_verify_key', type=str)

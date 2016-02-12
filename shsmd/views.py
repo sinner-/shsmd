@@ -1,5 +1,6 @@
-#!bin/python
-''' x '''
+""" shsmd
+"""
+
 from shsmd import api
 from shsmd.user import User
 from shsmd.device import Device
