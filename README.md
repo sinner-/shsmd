@@ -32,6 +32,7 @@ It is necessary to implement public access to the server through at least one of
   * `git clone https://github.com/sinner-/shsmd`
   * `virtualenv -p /usr/bin/python2.7 shsmd`
   * `cd shsmd`
+  * `source bin/activate`
   * `pip install -r requirements.txt`
 
 ### Standalone daemon (development only)
