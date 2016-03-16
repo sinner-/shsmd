@@ -1,0 +1,11 @@
+#VirtualEnv
+bin
+lib
+lib64
+include
+
+#db
+shsmd.db
+
+#pyc
+*.pyc
