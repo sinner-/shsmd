@@ -17,7 +17,7 @@ class Configuration(object):
         """
 
         self.database = "shsmd.db"
-        self.debug = True
+        self.debug = False
         self.schema = "../schema.sql"
 
     def get(self):
