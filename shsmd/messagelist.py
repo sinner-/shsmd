@@ -1,6 +1,7 @@
 """ shsmd
 """
 
+import json
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -70,14 +71,14 @@ class MessageList(Resource):
 
         messages = {}
         for row in query_db('''
-                            SELECT message_public_key, message_contents
+                            SELECT message_public_key, reply_to, message_contents
                             FROM messages
                             JOIN message_recipients
                             ON messages.message_id = message_recipients.message_id
                             WHERE device_verify_key=?;''',
                             [signed_device_verify_key.message]):
             if row is not None:
-                messages[row[0]] = row[1]
+                messages[row[0]] = json.dumps({'reply_to': row[1], 'message_manifest': row[2]})
                 query_db('''
                          DELETE FROM message_recipients
                          WHERE device_verify_key=?;''',

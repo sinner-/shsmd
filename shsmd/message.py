@@ -64,14 +64,17 @@ class Message(Resource):
         args = parser.parse_args()
 
         #check if user exists already
-        stored_key = query_db('''
-                              SELECT device_verify_key
-                              FROM devices
-                              WHERE device_verify_key = ?;''',
-                              [args['device_verify_key']],
-                              one=True)
-        if stored_key is None:
+        device_record = query_db('''
+                                 SELECT username, device_verify_key
+                                 FROM devices
+                                 WHERE device_verify_key = ?;''',
+                                 [args['device_verify_key']],
+                                 one=True)
+        if device_record is None:
             abort(422, message="Device does not exist.")
+        else:
+            stored_key = device_record['device_verify_key']
+            username = device_record['username']
 
         destination_usernames = reconstruct_signed_message(args['destination_usernames'])
 
@@ -83,7 +86,7 @@ class Message(Resource):
         except TypeError:
             abort(400, message='Provided message_public_key is not a valid public key.')
 
-        device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
+        device_verify_key = VerifyKey(stored_key, encoder=HexEncoder)
 
         try:
             device_verify_key.verify(destination_usernames)
@@ -101,8 +104,9 @@ class Message(Resource):
         message_id = b64encode(message_contents.signature)
         query_db('''
                  INSERT INTO messages
-                 VALUES(?, ?, ?);''',
+                 VALUES(?, ?, ?, ?);''',
                  [message_id,
+                  username,
                   b64encode(message_contents.message),
                   b64encode(message_public_key.message)])
         get_db().commit()
