@@ -1,6 +1,8 @@
 """ shsmd
 """
 
+import ConfigParser
+
 class Configuration(object):
     """ Configuration class for shsmd.
 
@@ -13,12 +15,14 @@ class Configuration(object):
     def __init__(self):
         """ Configuration class initialisation.
 
-            Currently all values are hardcoded.
         """
 
-        self.database = "shsmd.db"
-        self.debug = False
-        self.schema = "../schema.sql"
+        config = ConfigParser.RawConfigParser()
+        config.read('config.ini')
+
+        self.debug = config.getboolean('general', 'debug')
+        self.database = config.get('database', 'db_path')
+        self.schema = config.get('database', 'schema_file')
 
     def get(self):
         """ Return configuration object.
