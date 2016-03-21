@@ -9,3 +9,6 @@ shsmd.db
 
 #pyc
 *.pyc
+
+#setuptools
+shsmd.egg-info

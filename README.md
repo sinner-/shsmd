@@ -33,10 +33,10 @@ It is necessary to implement public access to the server through at least one of
   * `virtualenv -p /usr/bin/python2.7 shsmd`
   * `cd shsmd`
   * `source bin/activate`
-  * `pip install -r requirements.txt`
+  * `pip install -e .`
 
 ### Standalone daemon (development only)
   * (from inside shsmd directory)
   * `source bin/activate`
-  * `bin/python run.py`
-    * NOTE: The database will be wiped on each run while DEBUG=True
+  * `shsmd`
+    * NOTE: The database will be wiped on each run while debug=True in config.ini
