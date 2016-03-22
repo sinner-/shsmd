@@ -3,6 +3,7 @@ bin
 lib
 lib64
 include
+share
 
 #db
 shsmd.db
