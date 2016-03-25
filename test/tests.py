@@ -279,6 +279,22 @@ class ShsmdTestCase(unittest.TestCase):
         assert 'message' in response.keys()
         assert response['message'] == "Signature for provided username is corrupt or invalid."
 
+    def test_fetch_key_nonexistent_destination_username(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.fetch_key(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 200
+        assert 'device_public_keys' in response.keys()
+        assert len(response['device_public_keys']) == 0
+
     def test_fetch_key_valid(self):
         username = 'testuser'
         master_signing_key = SigningKey.generate()
@@ -295,7 +311,27 @@ class ShsmdTestCase(unittest.TestCase):
         assert 'device_public_keys' in response.keys()
         assert response['device_public_keys'][0] == public_key
 
-        #TODO: test for multiple keys, test for nonexistent key
+    def test_fetch_key_valid_multiple(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device1_signing_key = SigningKey.generate()
+        device2_signing_key = SigningKey.generate()
+        valid_device1_verify_key = b64encode(master_signing_key.sign(device1_signing_key.verify_key.encode(encoder=HexEncoder)))
+        valid_device2_verify_key = b64encode(master_signing_key.sign(device2_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key1 = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
+        public_key2 = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
+        valid_device1_public_key = b64encode(master_signing_key.sign(public_key1))
+        valid_device2_public_key = b64encode(master_signing_key.sign(public_key2))
+        self.register_device(username, valid_device1_verify_key, valid_device1_public_key)
+        self.register_device(username, valid_device2_verify_key, valid_device2_public_key)
+        rv = self.fetch_key(device1_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device1_signing_key.sign(username)))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 200
+        assert 'device_public_keys' in response.keys()
+        assert response['device_public_keys'][0] == public_key1
+        assert response['device_public_keys'][1] == public_key2
 
 if __name__ == '__main__':
     unittest.main()
