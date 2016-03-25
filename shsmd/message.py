@@ -101,6 +101,14 @@ class Message(Resource):
         except BadSignatureError:
             abort(400, message="Signature for provided message_public_key is corrupt or invalid.")
 
+        try:
+            user_list = json.loads(destination_usernames.message)
+        except ValueError:
+            abort(400, message="Provided destination_usernames must be JSON encapsulated.")
+
+        if not isinstance(user_list, list):
+            abort(400, message="Provided destination_usernames must be a list.")
+
         message_id = b64encode(message_contents.signature)
         query_db('''
                  INSERT INTO messages
@@ -111,7 +119,7 @@ class Message(Resource):
                   b64encode(message_public_key.message)])
         get_db().commit()
 
-        for dest_user in json.loads(destination_usernames.message)['destination_usernames']:
+        for dest_user in user_list:
 
             for row in query_db('''
                                 SELECT device_verify_key
