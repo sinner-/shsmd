@@ -13,3 +13,6 @@ shsmd.db
 
 #setuptools
 shsmd.egg-info
+
+#tox
+.tox

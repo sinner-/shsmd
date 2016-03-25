@@ -28,6 +28,7 @@ setup(
                       'wrapt==1.10.6'],
     description='Self Hosted Secure Messaging Daemon',
     packages=['shsmd'],
+    package_data={'': ['../schema.sql']},
     entry_points={
         'console_scripts': [
             'shsmd = shsmd.__main__:main'
