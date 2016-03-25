@@ -22,8 +22,6 @@ class MessageList(Resource):
         """ message delivery method.
 
             Args:
-                device_verify_key        (str): NaCl verification for the device the user
-                is sending the query as.
                 signed_device_verify_key (str): base64 encoded, signed device_verify_key to
                 ensure that the user is only fetching messages for devices which they posess
                 the full device verification keypair for.
@@ -39,27 +37,23 @@ class MessageList(Resource):
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('device_verify_key',
-                            type=str,
-                            required=True,
-                            help="device_verify_key is either blank or incorrect type.")
         parser.add_argument('signed_device_verify_key',
                             type=str,
                             required=True,
                             help="signed_device_verify_key is either blank or incorrect type.")
         args = parser.parse_args()
 
+        signed_device_verify_key = reconstruct_signed_message(args['signed_device_verify_key'])
+
         #check if user exists already
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
                               WHERE device_verify_key = ?;''',
-                              [args['device_verify_key']],
+                              [signed_device_verify_key.message],
                               one=True)
         if stored_key is None:
             abort(422, message="Device does not exist.")
-
-        signed_device_verify_key = reconstruct_signed_message(args['signed_device_verify_key'])
 
         device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
 
