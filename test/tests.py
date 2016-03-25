@@ -37,6 +37,13 @@ class ShsmdTestCase(unittest.TestCase):
                              data={'device_verify_key': device_verify_key,
                                    'destination_username': destination_username})
 
+    def send_message(self, device_verify_key, destination_usernames, message_public_key, message_contents):
+        return self.app.post('/api/v1.0/message',
+                             data={'device_verify_key': device_verify_key,
+                                   'destination_usernames': destination_usernames,
+                                   'message_public_key': message_public_key,
+                                   'message_contents': message_contents})
+
     def test_register_user_empty_user(self):
         rv = self.register_user(None, None)
         assert isinstance(rv, flask.wrappers.Response)
@@ -332,6 +339,205 @@ class ShsmdTestCase(unittest.TestCase):
         assert 'device_public_keys' in response.keys()
         assert response['device_public_keys'][0] == public_key1
         assert response['device_public_keys'][1] == public_key2
+
+    def test_send_message_empty_device_verify_key(self):
+        rv = self.send_message(None, None, None, None)
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert 'device_verify_key' in response['message'].keys()
+        assert response['message']['device_verify_key'] == "device_verify_key is either blank or incorrect type."
+
+    def test_send_message_empty_destination_usernames(self):
+        rv = self.send_message('a', None, None, None)
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert 'destination_usernames' in response['message'].keys()
+        assert response['message']['destination_usernames'] == "destination_usernames is either blank or incorrect type."
+
+    def test_send_message_empty_message_public_key(self):
+        rv = self.send_message('a', 'a', None, None)
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert 'message_public_key' in response['message'].keys()
+        assert response['message']['message_public_key'] == "message_public_key is either blank or incorrect type."
+
+    def test_send_message_empty_message_contents(self):
+        rv = self.send_message('a', 'a', 'a', None)
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert 'message_contents' in response['message'].keys()
+        assert response['message']['message_contents'] == "message_contents is either blank or incorrect type."
+
+    def test_send_message_nonexistent_device_verify_key(self):
+        rv = self.send_message('a', 'a', 'a', 'a')
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 422
+        assert 'message' in response.keys()
+        assert response['message'] == "Device does not exist."
+
+    def test_send_message_unsigned_destination_usernames(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), 'a', 'a', 'a')
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "The provided signed_message is not valid."
+
+    def test_send_message_unsigned_message_public_key(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), 'a', 'a')
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "The provided signed_message is not valid."
+
+    def test_send_message_unsigned_message_contents(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign('a')), 'a')
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "The provided signed_message is not valid."
+
+    def test_send_message_invalid_message_public_key(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "Provided message_public_key is not a valid public key."
+
+    def test_send_message_badsigned_destination_usernames(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(master_signing_key.sign('a')), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "Signature for provided username is corrupt or invalid."
+
+    def test_send_message_badsigned_message_public_key(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "Signature for provided message_public_key is corrupt or invalid."
+
+    def test_send_message_badsigned_message_contents(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(master_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "Signature for provided message_contents is corrupt or invalid."
+
+    def test_send_message_invalid_json_destination_usernames(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "Provided destination_usernames must be JSON encapsulated."
+
+    def test_send_message_invalid_list_destination_usernames(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign(json.dumps('a'))), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 400
+        assert 'message' in response.keys()
+        assert response['message'] == "Provided destination_usernames must be a list."
+
+    def test_send_message_valid(self):
+        username = 'testuser'
+        master_signing_key = SigningKey.generate()
+        self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
+        device_signing_key = SigningKey.generate()
+        valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
+        public_key = PrivateKey.generate().public_key
+        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        self.register_device(username, valid_device_verify_key, valid_device_public_key)
+        rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign(json.dumps([username]))), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
+        assert isinstance(rv, flask.wrappers.Response)
+        response = json.loads(rv.data)
+        assert rv.status_code == 201
+        assert response == device_signing_key.verify_key.encode(encoder=HexEncoder)
 
 if __name__ == '__main__':
     unittest.main()
