@@ -1,6 +1,6 @@
 # shsmd: Self Hosted Secure Messaging Daemon
 
-[![Build Status](https://travis-ci.org/sinner-/shsmd.svg?branch=master)](https://travis-ci.org/sinner-/shsmd)
+[![Build Status](https://travis-ci.org/sinner-/shsmd.svg?branch=develop)](https://travis-ci.org/sinner-/shsmd)
 
 ## Overview
 
