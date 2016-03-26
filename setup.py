@@ -32,7 +32,7 @@ setup(
                       'lazy-object-proxy==1.2.1',
                       'MarkupSafe==0.23',
                       'pycparser==2.14',
-                      'pylint==1.5.4',
+                      'virtualenv==15.0.1',
                       'PyNaCl==0.3.0',
                       'python-dateutil==2.4.2',
                       'pytz==2015.7',
