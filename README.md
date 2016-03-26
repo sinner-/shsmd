@@ -1,5 +1,7 @@
 # shsmd: Self Hosted Secure Messaging Daemon
 
+[![Build Status](https://travis-ci.org/sinner-/shsmd.svg?branch=master)](https://travis-ci.org/sinner-/shsmd)
+
 ## Overview
 
 How hard is it to develop a secure, client-server style messaging system that supports multiple devices per user and multiple recipients per message?
