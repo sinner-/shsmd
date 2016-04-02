@@ -24,13 +24,12 @@ class Device(Resource):
             Args:
                 username          (str): Username the device will be registered against.
                 device_verify_key (str): NaCl verification key for the device.
-                device_public_key (str): NaCl public key for the device.
 
             Returns:
                 HTTP 422: If the username the user has requested to register the device
                 under does not exist.
 
-                HTTP 400: If either device_public_key or device_verify_key is not a valid
+                HTTP 400: If device_verify_key is not a valid
                 NaCl key, or if any of the provided keys are not signed by the master
                 verification key provided during user registration.
 
@@ -46,10 +45,6 @@ class Device(Resource):
                             type=str,
                             required=True,
                             help="device_verify_key is either blank or incorrect type.")
-        parser.add_argument('device_public_key',
-                            type=str,
-                            required=True,
-                            help="device_public_key is either blank or incorrect type.")
         args = parser.parse_args()
 
         #check if user exists already
@@ -70,13 +65,6 @@ class Device(Resource):
             abort(400,
                   message="The provided device_verify_key is not valid.")
 
-        device_public_key = reconstruct_signed_message(args['device_public_key'])
-        try:
-            PublicKey(device_public_key.message, encoder=HexEncoder)
-        except TypeError:
-            abort(400,
-                  message="The provided device_public_key is not valid.")
-
         #check to ensure keys are signed with master key
         master_verify_key = VerifyKey(stored_key['master_verify_key'], encoder=HexEncoder)
 
@@ -85,19 +73,13 @@ class Device(Resource):
         except BadSignatureError:
             abort(400,
                   message="Signature for device_verify_key is corrupt or invalid.")
-        try:
-            device_verify_key.verify(device_public_key)
-        except BadSignatureError:
-            abort(400,
-                  message="Signature for device_public_key is corrupt or invalid.")
 
         #otherwise, add device
         query_db('''
                  INSERT INTO devices
-                 VALUES(?, ?, ?);''',
+                 VALUES(?, ?);''',
                  [signed_device_verify_key.message,
-                  args['username'],
-                  args['device_public_key']])
+                  args['username']])
         get_db().commit()
 
         return signed_device_verify_key.message, 201

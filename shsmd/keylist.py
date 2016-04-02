@@ -68,11 +68,17 @@ class KeyList(Resource):
                   message="Signature for provided username is corrupt or invalid.")
 
         device_public_keys = []
-        for row in query_db('''
-                            SELECT device_public_key
+        for verify_key in query_db('''
+                            SELECT device_verify_key
                             FROM devices
                             WHERE username=?;''',
                             [destination_username.message]):
+            row = query_db('''
+                           SELECT device_public_key
+                           FROM pubkeys
+                           WHERE device_verify_key=?;''',
+                           [verify_key[0]],
+                           one=True)
             device_public_keys.append(row['device_public_key'])
 
         return {'device_public_keys': device_public_keys}

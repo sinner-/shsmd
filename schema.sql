@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS devices;
+DROP TABLE IF EXISTS pubkeys;
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS message_recipients;
 CREATE TABLE users (
@@ -8,8 +9,11 @@ CREATE TABLE users (
 CREATE TABLE devices (
     device_verify_key TEXT PRIMARY KEY NOT NULL,
     username TEXT NOT NULL,
-    device_public_key TEXT NOT NULL,
     FOREIGN KEY(username) REFERENCES users(username));
+CREATE TABLE pubkeys (
+    device_public_key TEXT PRIMARY KEY NOT NULL,
+    device_verify_key TEXT NOT NULL,
+    FOREIGN KEY(device_verify_key) REFERENCES devices(device_verify_key));
 CREATE TABLE messages (
     message_id TEXT PRIMARY KEY NOT NULL,
     reply_to TEXT NOT NULL,
@@ -17,7 +21,7 @@ CREATE TABLE messages (
     message_public_key TEXT NOT NULL,
     FOREIGN KEY (reply_to) REFERENCES users(username));
 CREATE TABLE message_recipients (
-    device_verify_key TEXT PRIMARY KEY NOT NULL,
+    device_verify_key TEXT NOT NULL,
     message_id TEXT NOT NULL,
     FOREIGN KEY(message_id) REFERENCES messages(message_id));
 CREATE INDEX users_username ON users (username);
