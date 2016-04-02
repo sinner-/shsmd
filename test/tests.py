@@ -198,7 +198,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        badsigned_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        badsigned_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         rv = self.register_device(username, valid_device_verify_key, badsigned_device_public_key)
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data)
@@ -212,7 +212,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         rv = self.register_device(username, valid_device_verify_key, valid_device_public_key)
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data)
@@ -266,7 +266,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.fetch_key(device_signing_key.verify_key.encode(encoder=HexEncoder), 'a')
         assert isinstance(rv, flask.wrappers.Response)
@@ -281,7 +281,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.fetch_key(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(master_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -297,7 +297,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.fetch_key(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -313,14 +313,14 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.fetch_key(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign(username)))
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data)
         assert rv.status_code == 200
         assert 'device_public_keys' in response.keys()
-        assert response['device_public_keys'][0] == public_key
+        assert shsmd.util.reconstruct_signed_message(response['device_public_keys'][0]).message == public_key
 
     def test_fetch_key_valid_multiple(self):
         username = 'testuser'
@@ -332,8 +332,8 @@ class ShsmdTestCase(unittest.TestCase):
         valid_device2_verify_key = b64encode(master_signing_key.sign(device2_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key1 = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
         public_key2 = PrivateKey.generate().public_key.encode(encoder=HexEncoder)
-        valid_device1_public_key = b64encode(master_signing_key.sign(public_key1))
-        valid_device2_public_key = b64encode(master_signing_key.sign(public_key2))
+        valid_device1_public_key = b64encode(device1_signing_key.sign(public_key1))
+        valid_device2_public_key = b64encode(device2_signing_key.sign(public_key2))
         self.register_device(username, valid_device1_verify_key, valid_device1_public_key)
         self.register_device(username, valid_device2_verify_key, valid_device2_public_key)
         rv = self.fetch_key(device1_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device1_signing_key.sign(username)))
@@ -341,8 +341,8 @@ class ShsmdTestCase(unittest.TestCase):
         response = json.loads(rv.data)
         assert rv.status_code == 200
         assert 'device_public_keys' in response.keys()
-        assert response['device_public_keys'][0] == public_key1
-        assert response['device_public_keys'][1] == public_key2
+        assert shsmd.util.reconstruct_signed_message(response['device_public_keys'][0]).message == public_key1
+        assert shsmd.util.reconstruct_signed_message(response['device_public_keys'][1]).message == public_key2
 
     def test_send_message_empty_device_verify_key(self):
         rv = self.send_message(None, None, None, None)
@@ -394,7 +394,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), 'a', 'a', 'a')
         assert isinstance(rv, flask.wrappers.Response)
@@ -409,7 +409,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), 'a', 'a')
         assert isinstance(rv, flask.wrappers.Response)
@@ -424,7 +424,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign('a')), 'a')
         assert isinstance(rv, flask.wrappers.Response)
@@ -439,7 +439,7 @@ class ShsmdTestCase(unittest.TestCase):
         self.register_user(username, master_signing_key.verify_key.encode(encoder=HexEncoder))
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
-        valid_device_public_key = b64encode(master_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(PrivateKey.generate().public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -455,7 +455,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(master_signing_key.sign('a')), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -471,7 +471,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -487,7 +487,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(master_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -503,7 +503,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign('a')), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -519,7 +519,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign(json.dumps('a'))), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -535,7 +535,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign(json.dumps([username]))), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
         assert isinstance(rv, flask.wrappers.Response)
@@ -583,7 +583,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.get_messages(valid_device_verify_key)
         assert isinstance(rv, flask.wrappers.Response)
@@ -599,7 +599,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         rv = self.get_messages(b64encode(device_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder))))
         assert isinstance(rv, flask.wrappers.Response)
@@ -615,7 +615,7 @@ class ShsmdTestCase(unittest.TestCase):
         device_signing_key = SigningKey.generate()
         valid_device_verify_key = b64encode(master_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder)))
         public_key = PrivateKey.generate().public_key
-        valid_device_public_key = b64encode(master_signing_key.sign(public_key.encode(encoder=HexEncoder)))
+        valid_device_public_key = b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder)))
         self.register_device(username, valid_device_verify_key, valid_device_public_key)
         self.send_message(device_signing_key.verify_key.encode(encoder=HexEncoder), b64encode(device_signing_key.sign(json.dumps([username]))), b64encode(device_signing_key.sign(public_key.encode(encoder=HexEncoder))), b64encode(device_signing_key.sign('a')))
         rv = self.get_messages(b64encode(device_signing_key.sign(device_signing_key.verify_key.encode(encoder=HexEncoder))))

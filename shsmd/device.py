@@ -63,9 +63,9 @@ class Device(Resource):
             abort(422, message="Username does not exist.")
 
         #check if input is valid
-        device_verify_key = reconstruct_signed_message(args['device_verify_key'])
+        signed_device_verify_key = reconstruct_signed_message(args['device_verify_key'])
         try:
-            VerifyKey(device_verify_key.message, encoder=HexEncoder)
+            device_verify_key = VerifyKey(signed_device_verify_key.message, encoder=HexEncoder)
         except TypeError:
             abort(400,
                   message="The provided device_verify_key is not valid.")
@@ -81,12 +81,12 @@ class Device(Resource):
         master_verify_key = VerifyKey(stored_key['master_verify_key'], encoder=HexEncoder)
 
         try:
-            master_verify_key.verify(device_verify_key)
+            master_verify_key.verify(signed_device_verify_key)
         except BadSignatureError:
             abort(400,
                   message="Signature for device_verify_key is corrupt or invalid.")
         try:
-            master_verify_key.verify(device_public_key)
+            device_verify_key.verify(device_public_key)
         except BadSignatureError:
             abort(400,
                   message="Signature for device_public_key is corrupt or invalid.")
@@ -95,9 +95,9 @@ class Device(Resource):
         query_db('''
                  INSERT INTO devices
                  VALUES(?, ?, ?);''',
-                 [device_verify_key.message,
+                 [signed_device_verify_key.message,
                   args['username'],
-                  device_public_key.message])
+                  args['device_public_key']])
         get_db().commit()
 
-        return device_verify_key.message, 201
+        return signed_device_verify_key.message, 201
