@@ -49,13 +49,13 @@ class MessageList(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE device_verify_key = ?;''',
-                              [signed_device_verify_key.message],
+                              WHERE device_verify_key = %s;''',
+                              (signed_device_verify_key.message,),
                               one=True)
         if stored_key is None:
             abort(422, message="Device does not exist.")
 
-        device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
+        device_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
         try:
             device_verify_key.verify(signed_device_verify_key)
@@ -69,14 +69,14 @@ class MessageList(Resource):
                             FROM messages
                             JOIN message_recipients
                             ON messages.message_id = message_recipients.message_id
-                            WHERE device_verify_key=?;''',
-                            [signed_device_verify_key.message]):
+                            WHERE device_verify_key=%s;''',
+                            (signed_device_verify_key.message,)):
             if row is not None:
                 messages[row[0]] = json.dumps({'reply_to': row[1], 'message_manifest': row[2]})
                 query_db('''
                          DELETE FROM message_recipients
-                         WHERE device_verify_key=?;''',
-                         [signed_device_verify_key.message])
+                         WHERE device_verify_key=%s;''',
+                         (signed_device_verify_key.message,))
                 query_db('''
                          DELETE FROM messages
                          WHERE message_id

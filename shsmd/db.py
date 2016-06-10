@@ -1,25 +1,29 @@
 """ shsmd
 """
 
-import sqlite3
+import pymysql
 from flask import g
 from shsmd.config import CONF
 from shsmd import app
 
 def get_db():
-    """ Connect to sqlite database.
+    """ Connect to MySQL database.
 
         Queries against db connection will be returned as
         dict rather than list.
 
         Returns:
-            sqlite3.Connection: database connection object
+            pymysql.Connection: database connection object
     """
 
     database = getattr(g, '_database', None)
     if database is None:
-        database = g._database = sqlite3.connect(CONF.database)
-        database.row_factory = sqlite3.Row
+        g._database = pymysql.connect(host=CONF.mysql_hostname,
+                                      port=CONF.mysql_port,
+                                      user=CONF.mysql_username,
+                                      passwd=CONF.mysql_password,
+                                      db=CONF.mysql_database)
+        database = g._database
     return database
 
 @app.teardown_appcontext
@@ -43,7 +47,8 @@ def query_db(query, args=(), one=False):
             Result of SQL querystring.
     """
 
-    cur = get_db().execute(query, args)
+    cur = get_db().cursor()
+    cur.execute(query, args)
     results = cur.fetchall()
     cur.close()
     return (results[0] if results else None) if one else results
@@ -55,5 +60,5 @@ def init_db():
     with app.app_context():
         database = get_db()
         with app.open_resource(CONF.schema, mode='r') as db_file:
-            database.cursor().executescript(db_file.read())
+            database.cursor().execute(db_file.read())
         database.commit()

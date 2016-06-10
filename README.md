@@ -28,7 +28,12 @@ It is necessary to implement public access to the server through at least one of
 
 ### Install necessary OS packages:
   * Fedora:
-    * `dnf install redhat-rpm-config python2-devel libffi-devel libsodium-devel sqlite3`
+    * `dnf install redhat-rpm-config python2-devel libffi-devel libsodium-devel mariadb-devel`
+
+### Database setup
+  * `CREATE DATABASE shsmd;`
+  * `CREATE USER 'shsmd'@'localhost' IDENTIFIED by 'shsmd';`
+  * `GRANT ALL ON shsmd.* TO 'shsmd'@'%';`
   
 ### Python setup
   * `git clone https://github.com/sinner-/shsmd`

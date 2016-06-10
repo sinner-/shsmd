@@ -51,8 +51,8 @@ class Device(Resource):
         stored_key = query_db('''
                               SELECT master_verify_key
                               FROM users
-                              WHERE username = ?;''',
-                              [args['username']],
+                              WHERE username = %s;''',
+                              (args['username'],),
                               one=True)
         if stored_key is None:
             abort(422, message="Username does not exist.")
@@ -66,7 +66,7 @@ class Device(Resource):
                   message="The provided device_verify_key is not valid.")
 
         #check to ensure keys are signed with master key
-        master_verify_key = VerifyKey(stored_key['master_verify_key'], encoder=HexEncoder)
+        master_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
         try:
             master_verify_key.verify(signed_device_verify_key)
@@ -77,9 +77,9 @@ class Device(Resource):
         #otherwise, add device
         query_db('''
                  INSERT INTO devices
-                 VALUES(?, ?);''',
-                 [signed_device_verify_key.message,
-                  args['username']])
+                 VALUES(%s, %s);''',
+                 (signed_device_verify_key.message,
+                  args['username']))
         get_db().commit()
 
         return signed_device_verify_key.message, 201

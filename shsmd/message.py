@@ -67,14 +67,14 @@ class Message(Resource):
         device_record = query_db('''
                                  SELECT username, device_verify_key
                                  FROM devices
-                                 WHERE device_verify_key = ?;''',
-                                 [args['device_verify_key']],
+                                 WHERE device_verify_key = %s;''',
+                                 (args['device_verify_key'],),
                                  one=True)
         if device_record is None:
             abort(422, message="Device does not exist.")
         else:
-            stored_key = device_record['device_verify_key']
-            username = device_record['username']
+            stored_key = device_record[1]
+            username = device_record[0]
 
         destination_usernames = reconstruct_signed_message(args['destination_usernames'])
 
@@ -112,11 +112,11 @@ class Message(Resource):
         message_id = b64encode(message_contents.signature)
         query_db('''
                  INSERT INTO messages
-                 VALUES(?, ?, ?, ?);''',
-                 [message_id,
+                 VALUES(%s, %s, %s, %s);''',
+                 (message_id,
                   username,
                   b64encode(message_contents.message),
-                  b64encode(message_public_key.message)])
+                  b64encode(message_public_key.message)))
         get_db().commit()
 
         for dest_user in user_list:
@@ -124,13 +124,13 @@ class Message(Resource):
             for row in query_db('''
                                 SELECT device_verify_key
                                 FROM devices
-                                WHERE username=?;''',
-                                [dest_user]):
+                                WHERE username=%s;''',
+                                (dest_user,)):
                 query_db('''
                          INSERT INTO message_recipients
-                         VALUES(?, ?);''',
-                         [row['device_verify_key'],
-                          message_id])
+                         VALUES(%s, %s);''',
+                         (row[0],
+                          message_id))
                 get_db().commit()
 
 

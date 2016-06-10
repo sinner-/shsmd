@@ -2,6 +2,10 @@ language: python
 python:
     - "2.7"
 install: 
-    - "python setup.py install"
+    - python setup.py install
+before_script:
+    - mysql -uroot -e "CREATE DATABASE shsmd; CREATE USER 'shsmd'@'%' IDENTIFIED by 'shsmd'; GRANT ALL ON shsmd.* TO 'shsmd'@'%';"
 script: 
-    - "python setup.py test"
+    - python setup.py test
+services:
+    - mysql

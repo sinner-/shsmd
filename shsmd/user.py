@@ -47,8 +47,8 @@ class User(Resource):
         username = query_db('''
                             SELECT username
                             FROM users
-                            WHERE username = ?;''',
-                            [args['username']],
+                            WHERE username=%s;''',
+                            (args['username'],),
                             one=True)
         if username is not None:
             abort(422, message="username already registered.")
@@ -65,9 +65,9 @@ class User(Resource):
         #otherwise, add user
         query_db('''
                  INSERT INTO users
-                 VALUES(?, ?);''',
-                 [args['username'],
-                  args['master_verify_key']])
+                 VALUES(%s, %s);''',
+                 (args['username'],
+                  args['master_verify_key']))
         get_db().commit()
 
         return args['username'], 201

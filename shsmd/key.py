@@ -51,8 +51,8 @@ class Key(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE device_verify_key = ?;''',
-                              [args['device_verify_key']],
+                              WHERE device_verify_key = %s;''',
+                              (args['device_verify_key'],),
                               one=True)
         if stored_key is None:
             abort(422, message="Device does not exist.")
@@ -65,7 +65,7 @@ class Key(Resource):
                   message="The provided device_public_key is not valid.")
 
         #check to ensure keys are signed with master key
-        device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
+        device_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
         try:
             device_verify_key.verify(signed_device_public_key)
@@ -76,9 +76,9 @@ class Key(Resource):
         #otherwise, add device
         query_db('''
                  INSERT INTO pubkeys
-                 VALUES(?, ?);''',
-                 [args['device_public_key'],
-                  args['device_verify_key']])
+                 VALUES(%s, %s);''',
+                 (args['device_public_key'],
+                  args['device_verify_key']))
         get_db().commit()
 
         return signed_device_public_key.message, 201

@@ -51,15 +51,15 @@ class DeviceList(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE device_verify_key = ?;''',
-                              [args['device_verify_key']],
+                              WHERE device_verify_key = %s;''',
+                              (args['device_verify_key'],),
                               one=True)
         if stored_key is None:
             abort(422, message="Device does not exist.")
 
         destination_username = reconstruct_signed_message(args['destination_username'])
 
-        device_verify_key = VerifyKey(stored_key['device_verify_key'], encoder=HexEncoder)
+        device_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
         try:
             device_verify_key.verify(destination_username)
@@ -71,8 +71,8 @@ class DeviceList(Resource):
         for row in query_db('''
                             SELECT device_verify_key
                             FROM devices
-                            WHERE username=?;''',
-                            [destination_username.message]):
-            device_verify_keys.append(row['device_verify_key'])
+                            WHERE username=%s;''',
+                            (destination_username.message,)):
+            device_verify_keys.append(row[0])
 
         return {'device_verify_keys': device_verify_keys}

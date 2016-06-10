@@ -195,7 +195,7 @@ class ShsmdTestCase(unittest.TestCase):
         assert response['message']['device_public_key'] == "device_public_key is either blank or incorrect type."
 
     def test_add_key_nonexistent_device(self):
-        rv = self.add_key('a','a') 
+        rv = self.add_key('a','a')
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data)
         assert rv.status_code == 422
@@ -385,8 +385,8 @@ class ShsmdTestCase(unittest.TestCase):
         response = json.loads(rv.data)
         assert rv.status_code == 200
         assert 'device_public_keys' in response.keys()
-        assert shsmd.util.reconstruct_signed_message(response['device_public_keys'][0]).message == public_key1
-        assert shsmd.util.reconstruct_signed_message(response['device_public_keys'][1]).message == public_key2
+        assert valid_device1_public_key in response['device_public_keys']
+        assert valid_device2_public_key in response['device_public_keys']
 
 
     def test_fetch_device_empty_device_verify_key(self):
@@ -500,9 +500,9 @@ class ShsmdTestCase(unittest.TestCase):
         response = json.loads(rv.data)
         assert rv.status_code == 200
         assert 'device_verify_keys' in response.keys()
-        assert response['device_verify_keys'][0] == device1_signing_key.verify_key.encode(encoder=HexEncoder)
-        assert response['device_verify_keys'][1] == device2_signing_key.verify_key.encode(encoder=HexEncoder)
-        
+        assert device1_signing_key.verify_key.encode(encoder=HexEncoder) in response['device_verify_keys']
+        assert device2_signing_key.verify_key.encode(encoder=HexEncoder) in response['device_verify_keys']
+
     def test_send_message_empty_device_verify_key(self):
         rv = self.send_message(None, None, None, None)
         assert isinstance(rv, flask.wrappers.Response)
