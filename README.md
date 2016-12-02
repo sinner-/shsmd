@@ -32,7 +32,7 @@ It is necessary to implement public access to the server through at least one of
 
 ### Database setup
   * `CREATE DATABASE shsmd;`
-  * `CREATE USER 'shsmd'@'localhost' IDENTIFIED by 'shsmd';`
+  * `CREATE USER 'shsmd'@'%' IDENTIFIED by 'shsmd';`
   * `GRANT ALL ON shsmd.* TO 'shsmd'@'%';`
   
 ### Python setup
