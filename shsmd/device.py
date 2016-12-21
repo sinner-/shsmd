@@ -6,7 +6,6 @@ from flask_restful import reqparse
 from flask_restful import abort
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
-from nacl.public import PublicKey
 from nacl.encoding import HexEncoder
 from shsmd.db import query_db
 from shsmd.db import get_db
@@ -60,7 +59,7 @@ class Device(Resource):
         #check if input is valid
         signed_device_verify_key = reconstruct_signed_message(args['device_verify_key'])
         try:
-            device_verify_key = VerifyKey(signed_device_verify_key.message, encoder=HexEncoder)
+            VerifyKey(signed_device_verify_key.message, encoder=HexEncoder)
         except TypeError:
             abort(400,
                   message="The provided device_verify_key is not valid.")

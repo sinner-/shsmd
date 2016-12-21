@@ -59,7 +59,7 @@ class Key(Resource):
 
         signed_device_public_key = reconstruct_signed_message(args['device_public_key'])
         try:
-            device_public_key = PublicKey(signed_device_public_key.message, encoder=HexEncoder)
+            PublicKey(signed_device_public_key.message, encoder=HexEncoder)
         except TypeError:
             abort(400,
                   message="The provided device_public_key is not valid.")

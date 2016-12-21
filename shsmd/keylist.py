@@ -69,10 +69,10 @@ class KeyList(Resource):
 
         device_public_keys = []
         for verify_key in query_db('''
-                            SELECT device_verify_key
-                            FROM devices
-                            WHERE username=%s;''',
-                            (destination_username.message,)):
+                                   SELECT device_verify_key
+                                   FROM devices
+                                   WHERE username=%s;''',
+                                   (destination_username.message,)):
             row = query_db('''
                            SELECT device_public_key
                            FROM pubkeys

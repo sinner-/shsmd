@@ -25,5 +25,3 @@ def reconstruct_signed_message(signed_message):
               message="The provided signed_message is not valid.")
 
     return recon_signed_message
-
-
