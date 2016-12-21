@@ -38,5 +38,3 @@ class Configuration(object):
         """ Mutator method, currently does nothing.
         """
         pass
-
-CONF = Configuration().get()

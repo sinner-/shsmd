@@ -11,15 +11,18 @@ database will be dropped and re-initialised on launch.
 
 from shsmd import app
 from shsmd.db import init_db
-from shsmd.config import CONF
+from shsmd.config import Configuration
 
 def main():
     ''' starting harness function
         if debug is set it will wipe the database and start fresh.
     '''
-    if CONF.debug:
+
+    config = Configuration().get()
+
+    if config.debug:
         init_db()
-    app.run(debug=CONF.debug)
+    app.run(debug=config.debug)
 
 if __name__ == '__main__':
     main()

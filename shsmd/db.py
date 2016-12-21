@@ -3,7 +3,7 @@
 
 import pymysql
 from flask import g
-from shsmd.config import CONF
+from shsmd.config import Configuration
 from shsmd import app
 
 def get_db():
@@ -16,13 +16,15 @@ def get_db():
             pymysql.Connection: database connection object
     """
 
+    config = Configuration().get()
+
     database = getattr(g, '_database', None)
     if database is None:
-        g._database = pymysql.connect(host=CONF.mysql_hostname,
-                                      port=CONF.mysql_port,
-                                      user=CONF.mysql_username,
-                                      passwd=CONF.mysql_password,
-                                      db=CONF.mysql_database)
+        g._database = pymysql.connect(host=config.mysql_hostname,
+                                      port=config.mysql_port,
+                                      user=config.mysql_username,
+                                      passwd=config.mysql_password,
+                                      db=config.mysql_database)
         database = g._database
     return database
 
@@ -56,9 +58,10 @@ def query_db(query, args=(), one=False):
 def init_db():
     """ Initialise the database using provided schema.
     """
+    config = Configuration().get()
 
     with app.app_context():
         database = get_db()
-        with app.open_resource(CONF.schema, mode='r') as db_file:
+        with app.open_resource(config.schema, mode='r') as db_file:
             database.cursor().execute(db_file.read())
         database.commit()
