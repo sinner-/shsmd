@@ -1,4 +1,3 @@
-#!bin/python
 """
 Execution harness for Self Hosted Secure Messaging Daemon.
 
@@ -23,6 +22,3 @@ def main():
     if config.debug:
         init_db()
     app.run(debug=config.debug)
-
-if __name__ == '__main__':
-    main()
