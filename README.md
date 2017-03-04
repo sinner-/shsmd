@@ -28,22 +28,21 @@ It is necessary to implement public access to the server through at least one of
 
 ### Install necessary OS packages:
   * Fedora:
-    * `dnf install redhat-rpm-config python2-devel libffi-devel libsodium-devel mariadb-devel`
+    * `dnf install redhat-rpm-config python2-devel libffi-devel libsodium-devel mariadb-devel mariadb-server python-pip python-virtualenvwrapper`
 
 ### Database setup
   * `CREATE DATABASE shsmd;`
   * `CREATE USER 'shsmd'@'%' IDENTIFIED by 'shsmd';`
   * `GRANT ALL ON shsmd.* TO 'shsmd'@'%';`
   
-### Python setup
+### Setup
   * `git clone https://github.com/sinner-/shsmd`
-  * `virtualenv -p /usr/bin/python2.7 shsmd`
   * `cd shsmd`
-  * `source bin/activate`
-  * `pip install -e .`
+  * `source /usr/bin/virtualenvwrapper.sh`
+  * `mkvirtualenv shsmd`
+  * `python setup.py install`
+  * `shsmd-manage --initschema`
 
-### Standalone daemon (development only)
-  * (from inside shsmd directory)
-  * `source bin/activate`
-  * `shsmd`
-    * NOTE: The database will be wiped on each run while debug=True in config.ini
+### Standalone daemon
+  * `workon shsmd` (if not already in virtualenv created during setup
+  * `shsmd-api` (optionally run `shsmd-manage --dropschema --initschema` first)
