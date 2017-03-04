@@ -1,7 +1,7 @@
 """ shsmd
 """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import sys
 
@@ -41,7 +41,7 @@ setup(
                       'Werkzeug>=0.11.3',
                       'wrapt>=1.10.6'],
     description='Self Hosted Secure Messaging Daemon',
-    packages=['shsmd'],
+    packages=find_packages(),
     package_data={'': ['../schema.sql']},
     entry_points={
         'console_scripts': [

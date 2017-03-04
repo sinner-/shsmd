@@ -10,7 +10,7 @@ database will be dropped and re-initialised on launch.
 """
 
 from shsmd import app
-from shsmd.db import init_db
+from shsmd.db.mysql import init_db
 from shsmd.config import Configuration
 
 def main():

@@ -7,7 +7,7 @@ from flask_restful import abort
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 from nacl.encoding import HexEncoder
-from shsmd.db import query_db
+from shsmd.db.mysql import query_db
 from shsmd.util import reconstruct_signed_message
 
 class DeviceList(Resource):

@@ -6,8 +6,9 @@ from flask_restful import reqparse
 from flask_restful import abort
 from nacl.signing import VerifyKey
 from nacl.encoding import HexEncoder
-from shsmd.db import query_db
-from shsmd.db import get_db
+from shsmd.db.mysql import query_db
+from shsmd.db.mysql import get_db
+
 
 class User(Resource):
     """ flask restful class for users.

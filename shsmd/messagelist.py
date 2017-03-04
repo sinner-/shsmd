@@ -8,8 +8,8 @@ from flask_restful import abort
 import nacl.utils
 from nacl.signing import VerifyKey
 from nacl.encoding import HexEncoder
-from shsmd.db import query_db
-from shsmd.db import get_db
+from shsmd.db.mysql import query_db
+from shsmd.db.mysql import get_db
 from shsmd.util import reconstruct_signed_message
 
 class MessageList(Resource):
