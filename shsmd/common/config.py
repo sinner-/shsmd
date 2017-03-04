@@ -9,7 +9,6 @@ class Configuration(object):
         Attributes:
             database  (str): Path to sqlite database.
             debug (boolean): Toggle to enable debug.
-            schema    (str): Path to sqlite schema.
     """
 
     def __init__(self):
@@ -21,7 +20,6 @@ class Configuration(object):
         config.read('config.ini')
 
         self.debug = config.getboolean('general', 'debug')
-        self.schema = config.get('database', 'schema_file')
         self.mysql_hostname = config.get('database', 'mysql_hostname')
         self.mysql_port = int(config.get('database', 'mysql_port'))
         self.mysql_username = config.get('database', 'mysql_username')
