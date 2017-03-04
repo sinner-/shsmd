@@ -8,18 +8,18 @@ from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder
 from nacl.public import PrivateKey
 import flask.wrappers
-import shsmd
+import shsmd.api
 
 class ShsmdTestCase(unittest.TestCase):
     def setUp(self):
-        self.db_fd, shsmd.app.config['DATABASE'] = tempfile.mkstemp()
-        shsmd.app.config['TESTING'] = True
-        self.app = shsmd.app.test_client()
+        self.db_fd, shsmd.api.app.config['DATABASE'] = tempfile.mkstemp()
+        shsmd.api.app.config['TESTING'] = True
+        self.app = shsmd.api.app.test_client()
         shsmd.db.mysql.init_db()
 
     def tearDown(self):
         os.close(self.db_fd)
-        os.unlink(shsmd.app.config['DATABASE'])
+        os.unlink(shsmd.api.app.config['DATABASE'])
 
     def register_user(self, username, master_verify_key):
         return self.app.post('/api/v1.0/user',

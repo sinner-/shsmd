@@ -4,7 +4,7 @@
 import pymysql
 from flask import g
 from shsmd.common.config import Configuration
-from shsmd import app
+from shsmd.api import app
 
 def get_db():
     """ Connect to MySQL database.

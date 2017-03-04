@@ -1,14 +1,14 @@
 """ shsmd
 """
 
-from shsmd import api
-from shsmd.user import User
-from shsmd.device import Device
-from shsmd.devicelist import DeviceList
-from shsmd.key import Key
-from shsmd.keylist import KeyList
-from shsmd.message import Message
-from shsmd.messagelist import MessageList
+from shsmd.api import api
+from shsmd.api.user import User
+from shsmd.api.device import Device
+from shsmd.api.devicelist import DeviceList
+from shsmd.api.key import Key
+from shsmd.api.keylist import KeyList
+from shsmd.api.message import Message
+from shsmd.api.messagelist import MessageList
 
 api.add_resource(User, '/api/v1.0/user')
 api.add_resource(Device, '/api/v1.0/device')

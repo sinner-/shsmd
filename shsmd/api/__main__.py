@@ -9,7 +9,7 @@ database will be dropped and re-initialised on launch.
 
 """
 
-from shsmd import app
+from shsmd.api import app
 from shsmd.db.mysql import init_db
 from shsmd.common.config import Configuration
 
