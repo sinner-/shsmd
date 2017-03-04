@@ -9,7 +9,6 @@ database will be dropped and re-initialised on launch.
 """
 
 from shsmd.api import app
-from shsmd.db.mysql import init_db
 from shsmd.common.config import Configuration
 
 def main():
@@ -19,6 +18,4 @@ def main():
 
     config = Configuration().get()
 
-    if config.debug:
-        init_db()
     app.run(debug=config.debug)

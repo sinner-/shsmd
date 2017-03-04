@@ -39,13 +39,15 @@ setup(
                       'pytz>=2015.7',
                       'six>=1.10.0',
                       'Werkzeug>=0.11.3',
+                      'Click>=6.7',
                       'wrapt>=1.10.6'],
     description='Self Hosted Secure Messaging Daemon',
     packages=find_packages(),
     package_data={'': ['../schema.sql']},
     entry_points={
         'console_scripts': [
-            'shsmd-api = shsmd.cmd.api:main'
+            'shsmd-api = shsmd.cmd.api:main',
+            'shsmd-manage = shsmd.cmd.manage:main'
         ]},
     tests_require=['tox'],
     cmdclass = {'test': Tox},

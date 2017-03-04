@@ -15,7 +15,8 @@ class ShsmdTestCase(unittest.TestCase):
         self.db_fd, shsmd.api.app.config['DATABASE'] = tempfile.mkstemp()
         shsmd.api.app.config['TESTING'] = True
         self.app = shsmd.api.app.test_client()
-        shsmd.db.mysql.init_db()
+        shsmd.db.mysql.drop_schema()
+        shsmd.db.mysql.create_schema()
 
     def tearDown(self):
         os.close(self.db_fd)
