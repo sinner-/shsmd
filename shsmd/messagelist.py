@@ -10,7 +10,7 @@ from nacl.signing import VerifyKey
 from nacl.encoding import HexEncoder
 from shsmd.db.mysql import query_db
 from shsmd.db.mysql import get_db
-from shsmd.util import reconstruct_signed_message
+from shsmd.common.util import reconstruct_signed_message
 
 class MessageList(Resource):
     """ flask restful class for delivering all messages for a requested device.

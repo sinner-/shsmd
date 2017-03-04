@@ -3,7 +3,7 @@
 
 import pymysql
 from flask import g
-from shsmd.config import Configuration
+from shsmd.common.config import Configuration
 from shsmd import app
 
 def get_db():

@@ -362,7 +362,7 @@ class ShsmdTestCase(unittest.TestCase):
         response = json.loads(rv.data)
         assert rv.status_code == 200
         assert 'device_public_keys' in response.keys()
-        assert shsmd.util.reconstruct_signed_message(response['device_public_keys'][0]).message == public_key
+        assert shsmd.common.util.reconstruct_signed_message(response['device_public_keys'][0]).message == public_key
 
     def test_fetch_key_valid_multiple(self):
         username = 'testuser'

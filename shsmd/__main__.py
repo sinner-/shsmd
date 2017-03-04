@@ -11,7 +11,7 @@ database will be dropped and re-initialised on launch.
 
 from shsmd import app
 from shsmd.db.mysql import init_db
-from shsmd.config import Configuration
+from shsmd.common.config import Configuration
 
 def main():
     ''' starting harness function
