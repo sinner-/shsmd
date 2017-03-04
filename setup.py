@@ -45,7 +45,7 @@ setup(
     package_data={'': ['../schema.sql']},
     entry_points={
         'console_scripts': [
-            'shsmd-api = shsmd.api.__main__:main'
+            'shsmd-api = shsmd.cmd.api:main'
         ]},
     tests_require=['tox'],
     cmdclass = {'test': Tox},
