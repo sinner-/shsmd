@@ -57,7 +57,7 @@ class User(Resource):
         #check if provided key is a valid key
         try:
             VerifyKey(args['master_verify_key'], encoder=HexEncoder)
-        except TypeError:
+        except:
             abort(400,
                   message="The provided master_verify_key is not valid.")
 

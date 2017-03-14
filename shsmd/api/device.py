@@ -60,7 +60,7 @@ class Device(Resource):
         signed_device_verify_key = reconstruct_signed_message(args['device_verify_key'])
         try:
             VerifyKey(signed_device_verify_key.message, encoder=HexEncoder)
-        except TypeError:
+        except:
             abort(400,
                   message="The provided device_verify_key is not valid.")
 
@@ -74,11 +74,12 @@ class Device(Resource):
                   message="Signature for device_verify_key is corrupt or invalid.")
 
         #otherwise, add device
+        device_verify_key = signed_device_verify_key.message.decode('utf-8')
         query_db('''
                  INSERT INTO devices
                  VALUES(%s, %s);''',
-                 (signed_device_verify_key.message,
+                 (device_verify_key,
                   args['username']))
         get_db().commit()
 
-        return signed_device_verify_key.message, 201
+        return device_verify_key, 201

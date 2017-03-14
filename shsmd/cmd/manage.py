@@ -8,9 +8,9 @@ from shsmd.db.mysql import drop_schema
 @click.option('--dropschema', is_flag=True)
 def main(initschema, dropschema):
     if dropschema:
-        print "Dropping all tables from database."
+        print("Dropping all tables from database.")
         drop_schema()
 
     if initschema:
-        print "Creating shsmd tables from schema."
+        print("Creating shsmd tables from schema.")
         create_schema()

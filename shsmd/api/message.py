@@ -83,7 +83,7 @@ class Message(Resource):
         message_public_key = reconstruct_signed_message(args['message_public_key'])
         try:
             PublicKey(message_public_key.message, encoder=HexEncoder)
-        except TypeError:
+        except:
             abort(400, message='Provided message_public_key is not a valid public key.')
 
         device_verify_key = VerifyKey(stored_key, encoder=HexEncoder)
@@ -102,7 +102,7 @@ class Message(Resource):
             abort(400, message="Signature for provided message_public_key is corrupt or invalid.")
 
         try:
-            user_list = json.loads(destination_usernames.message)
+            user_list = json.loads(destination_usernames.message.decode('utf-8'))
         except ValueError:
             abort(400, message="Provided destination_usernames must be JSON encapsulated.")
 

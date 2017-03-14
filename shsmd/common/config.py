@@ -1,7 +1,7 @@
 """ shsmd
 """
 
-import ConfigParser
+import configparser
 
 class Configuration(object):
     """ Configuration class for shsmd.
@@ -16,7 +16,7 @@ class Configuration(object):
 
         """
 
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.read('config.ini')
 
         self.debug = config.getboolean('general', 'debug')

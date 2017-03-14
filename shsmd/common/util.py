@@ -20,7 +20,7 @@ def reconstruct_signed_message(signed_message):
             tmp_encoder.encode(
                 tmp_signed_message[nacl.bindings.crypto_sign_BYTES:]),
             tmp_signed_message)
-    except TypeError:
+    except:
         abort(400,
               message="The provided signed_message is not valid.")
 

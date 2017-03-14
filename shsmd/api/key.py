@@ -60,7 +60,7 @@ class Key(Resource):
         signed_device_public_key = reconstruct_signed_message(args['device_public_key'])
         try:
             PublicKey(signed_device_public_key.message, encoder=HexEncoder)
-        except TypeError:
+        except:
             abort(400,
                   message="The provided device_public_key is not valid.")
 
@@ -81,4 +81,4 @@ class Key(Resource):
                   args['device_verify_key']))
         get_db().commit()
 
-        return signed_device_public_key.message, 201
+        return signed_device_public_key.message.decode('utf-8'), 201

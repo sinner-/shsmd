@@ -26,9 +26,11 @@ It is necessary to implement public access to the server through at least one of
 
 ## Installation
 
+### Note: Python >= 3.5 only!
+
 ### Install necessary OS packages:
   * Fedora:
-    * `dnf install redhat-rpm-config python2-devel libffi-devel libsodium-devel mariadb-devel mariadb-server python-pip python-virtualenvwrapper`
+    * `dnf install redhat-rpm-config python3-devel libffi-devel libsodium-devel mariadb-devel mariadb-server python3-pip python3-virtualenvwrapper`
 
 ### Database setup
   * `CREATE DATABASE shsmd;`
