@@ -1,6 +1,4 @@
-""" shsmd
-"""
-
+from binascii import Error as BinasciiError
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -12,27 +10,24 @@ from shsmd.db.mysql import get_db
 from shsmd.common.util import reconstruct_signed_message
 
 class Device(Resource):
-    """ flask restful class for devices.
-
-        Currently only handles device registration via HTTP POST.
+    """ flask restful class for registering a device against a username.
     """
 
-    def post(self):
-        """ device registration method.
+    @staticmethod
+    def post():
+        """ HTTP POST method for Device.
 
             Args:
                 username          (str): Username the device will be registered against.
-                device_verify_key (str): NaCl verification key for the device.
+                device_verify_key (str): device_verify_key for the device.
 
             Returns:
-                HTTP 422: If the username the user has requested to register the device
-                under does not exist.
+                HTTP 400        : If username or device_verify_key is not provided.
+                HTTP 400        : If device_verify_key is not a valid VerifyKey.
+                HTTP 400        : If device_verify_key is not signed by correct master_verify_key.
+                HTTP 422        : If the username the client has specified does not exists.
 
-                HTTP 400: If device_verify_key is not a valid
-                NaCl key, or if any of the provided keys are not signed by the master
-                verification key provided during user registration.
-
-                device_verify_key, HTTP 201: If the device registration was successful.
+                (str), HTTP 201 : If device registration was successful, returns device_verify_key.
         """
 
         parser = reqparse.RequestParser()
@@ -46,7 +41,7 @@ class Device(Resource):
                             help="device_verify_key is either blank or incorrect type.")
         args = parser.parse_args()
 
-        #check if user exists already
+        #check to make sure user exists already
         stored_key = query_db('''
                               SELECT master_verify_key
                               FROM users
@@ -56,24 +51,24 @@ class Device(Resource):
         if stored_key is None:
             abort(422, message="Username does not exist.")
 
-        #check if input is valid
+        #check if device_verify_key is a valid VerifyKey
         signed_device_verify_key = reconstruct_signed_message(args['device_verify_key'])
         try:
             VerifyKey(signed_device_verify_key.message, encoder=HexEncoder)
-        except:
+        except (TypeError, BinasciiError):
             abort(400,
                   message="The provided device_verify_key is not valid.")
 
-        #check to ensure keys are signed with master key
         master_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
+        #signature based authentication of the request
         try:
             master_verify_key.verify(signed_device_verify_key)
         except BadSignatureError:
             abort(400,
                   message="Signature for device_verify_key is corrupt or invalid.")
 
-        #otherwise, add device
+        #register device into DBMS
         device_verify_key = signed_device_verify_key.message.decode('utf-8')
         query_db('''
                  INSERT INTO devices
