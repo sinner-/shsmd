@@ -1,6 +1,3 @@
-""" shsmd
-"""
-
 from shsmd.api import api
 from shsmd.api.user import User
 from shsmd.api.device import Device
