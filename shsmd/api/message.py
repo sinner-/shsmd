@@ -1,6 +1,4 @@
-""" shsmd
-"""
-
+from binascii import Error as BinasciiError
 import json
 from base64 import b64encode
 from flask_restful import Resource
@@ -16,31 +14,29 @@ from shsmd.common.util import reconstruct_signed_message
 
 class Message(Resource):
     """ flask restful class for sending a message to a list of destination usernames.
-
-        Currently only handles sending a message via HTTP POST.
     """
 
-    def post(self):
-        """ message sending method.
+    @staticmethod
+    def post():
+        """ HTTP POST method for Message
 
             Args:
-                device_verify_key     (str): NaCl verification key for the device the user
-                is sending the query as.
-                destination_usernames (str): base64 encoded, signed, JSON encapsulated
-                list of destination usernames.
-                message_public_key    (str): base64 encoded, signed, ephemeral public
-                key that was used to encrypt the message.
-                message_contents      (str): base64 encoded, signed message contents.
+                device_verify_key       (str): device_verify_key for the device.
+                destination_usernames   (str): signed destination_usernames.
+                message_public_key      (str): signed public key used to encrypt the message.
+                message_contents        (str): signed message contents.
 
             Returns:
-                HTTP 422: If the device_verify_key provided by the user does not exist.
+                HTTP 400    : If device_verify_key, destination_usernames,
+                message_public_key or message_contents are not provided.
 
-                HTTP 400: If the provided destination_usernames, message_public_key or
-                message_contents is not signed by the correct device_verify_key provided
-                during device registration, or if the provided message_public_key is not
-                a valid NaCl public key.
+                HTTP 400    : If device_verify_key, destination_usernames,
+                message_public_key or message_contents are not signed by correct
+                device_verify_key.
 
-                device_verify_key, HTTP 201: If the message was sent successfully.
+                HTTP 400    : If message_public_key is not a valid PublicKey.
+                HTTP 422    : If device_verify_key does not exist.
+                HTTP 201    : If the message was sent successfully.
 
         """
 
@@ -63,7 +59,7 @@ class Message(Resource):
                             help="message_contents is either blank or incorrect type.")
         args = parser.parse_args()
 
-        #check if user exists already
+        #check to make sure device exists already
         device_record = query_db('''
                                  SELECT username, device_verify_key
                                  FROM devices
@@ -81,13 +77,16 @@ class Message(Resource):
         message_contents = reconstruct_signed_message(args['message_contents'])
 
         message_public_key = reconstruct_signed_message(args['message_public_key'])
+
+        #check if message_public_key is a valid PublicKey
         try:
             PublicKey(message_public_key.message, encoder=HexEncoder)
-        except:
+        except (TypeError, BinasciiError):
             abort(400, message='Provided message_public_key is not a valid public key.')
 
         device_verify_key = VerifyKey(stored_key, encoder=HexEncoder)
 
+        #signature based authentication of the request
         try:
             device_verify_key.verify(destination_usernames)
         except BadSignatureError:
@@ -115,8 +114,8 @@ class Message(Resource):
                  VALUES(%s, %s, %s, %s);''',
                  (message_id,
                   username,
-                  b64encode(message_contents.message),
-                  b64encode(message_public_key.message)))
+                  args['message_contents'],
+                  args['message_public_key']))
         get_db().commit()
 
         for dest_user in user_list:
@@ -133,5 +132,4 @@ class Message(Resource):
                           message_id))
                 get_db().commit()
 
-
-        return args['device_verify_key'], 201
+        return "messages stored for delivery.", 201

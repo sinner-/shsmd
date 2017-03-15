@@ -214,5 +214,4 @@ class MessageTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 201
-        assert response == device_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8')
-
+        assert response == "messages stored for delivery."
