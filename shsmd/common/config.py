@@ -1,6 +1,3 @@
-""" shsmd
-"""
-
 import configparser
 
 class Configuration(object):
@@ -13,7 +10,6 @@ class Configuration(object):
 
     def __init__(self):
         """ Configuration class initialisation.
-
         """
 
         config = configparser.RawConfigParser()
@@ -29,7 +25,6 @@ class Configuration(object):
     def get(self):
         """ Return configuration object.
         """
-
         return self
 
     def set(self):
