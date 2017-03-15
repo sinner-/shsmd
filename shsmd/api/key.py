@@ -1,6 +1,4 @@
-""" shsmd
-"""
-
+from binascii import Error as BinasciiError
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -13,27 +11,24 @@ from shsmd.db.mysql import get_db
 from shsmd.common.util import reconstruct_signed_message
 
 class Key(Resource):
-    """ flask restful class for devices.
-
-        Currently only handles device registration via HTTP POST.
+    """ flask restful class for registering public keys against a device.
     """
 
-    def post(self):
-        """ device registration method.
+    @staticmethod
+    def post():
+        """ HTTP POST method for Key.
 
             Args:
-                device_verify_key (str): NaCl verify key for the device.
-                device_public_key (str): NaCl public key for the device.
+                device_verify_key (str): device_verify_key for the device.
+                device_public_key (str): device_public_key for the device.
 
             Returns:
-                HTTP 422: If the username the user has requested to register the device
-                under does not exist.
+                HTTP 400        : If device_verify_key or device_public_key is not provided.
+                HTTP 400        : If device_public_key is not a valid PublicKey.
+                HTTP 400        : If device_public_key is not signed by correct device_verify_key.
+                HTTP 422        : If the device the client has specified does not exist.
 
-                HTTP 400: If device_public_key is not a valid
-                NaCl key, or if any of the provided keys are not signed by the device
-                verification key provided during device registration.
-
-                HTTP 201: If the key upload was successful.
+                (str), HTTP 201 : If the key upload was successful.
         """
 
         parser = reqparse.RequestParser()
@@ -47,7 +42,7 @@ class Key(Resource):
                             help="device_public_key is either blank or incorrect type.")
         args = parser.parse_args()
 
-        #check if user exists already
+        #check to make sure device exists already
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
@@ -57,23 +52,24 @@ class Key(Resource):
         if stored_key is None:
             abort(422, message="Device does not exist.")
 
+        #check if device_public_key is a valid PublicKey
         signed_device_public_key = reconstruct_signed_message(args['device_public_key'])
         try:
             PublicKey(signed_device_public_key.message, encoder=HexEncoder)
-        except:
+        except (TypeError, BinasciiError):
             abort(400,
                   message="The provided device_public_key is not valid.")
 
-        #check to ensure keys are signed with master key
         device_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
+        #signature based authentication of the request
         try:
             device_verify_key.verify(signed_device_public_key)
         except BadSignatureError:
             abort(400,
                   message="Signature for device_public_key is corrupt or invalid.")
 
-        #otherwise, add device
+        #register public key into DBMS
         query_db('''
                  INSERT INTO pubkeys
                  VALUES(%s, %s);''',
