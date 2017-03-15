@@ -3,3 +3,4 @@
 build
 dist
 shsmd.egg-info
+**/__pycache__/*
