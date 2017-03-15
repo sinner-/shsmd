@@ -85,8 +85,7 @@ class DeviceListTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 200
-        assert 'device_verify_keys' in response.keys()
-        assert len(response['device_verify_keys']) == 0
+        assert len(response) == 0
 
     def test_fetch_device_valid(self):
         username = 'testuser'
@@ -99,8 +98,7 @@ class DeviceListTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 200
-        assert 'device_verify_keys' in response.keys()
-        assert response['device_verify_keys'][0] == device_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8')
+        assert response[0] == device_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8')
 
     def test_fetch_device_valid_multiple(self):
         username = 'testuser'
@@ -116,7 +114,6 @@ class DeviceListTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 200
-        assert 'device_verify_keys' in response.keys()
-        assert device1_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8') in response['device_verify_keys']
-        assert device2_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8') in response['device_verify_keys']
+        assert device1_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8') in response
+        assert device2_signing_key.verify_key.encode(encoder=HexEncoder).decode('utf-8') in response
 
