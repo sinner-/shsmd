@@ -49,4 +49,4 @@ class ShsmdTestCase(unittest.TestCase):
 
     def get_messages(self, signed_device_verify_key):
         return self.app.post('/api/v1.0/messagelist',
-                             data={'signed_device_verify_key': signed_device_verify_key})
+                             data={'device_verify_key': signed_device_verify_key})
