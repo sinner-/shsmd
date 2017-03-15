@@ -1,9 +1,9 @@
-""" shsmd
+""" shsmd utility methods
 """
-from base64 import b64decode
-from nacl.encoding import RawEncoder
+from binascii import Error as BinasciiError
+from nacl.encoding import Base64Encoder
 from nacl.signing import SignedMessage
-import nacl.utils
+from nacl.bindings import crypto_sign_BYTES
 from flask_restful import abort
 
 def reconstruct_signed_message(signed_message):
@@ -11,16 +11,13 @@ def reconstruct_signed_message(signed_message):
         a PyNaCl SignedMessage object.
     """
 
-    tmp_encoder = RawEncoder
     try:
-        tmp_signed_message = tmp_encoder.encode(b64decode(signed_message))
+        tmp_signed_message = Base64Encoder.decode(signed_message)
         recon_signed_message = SignedMessage._from_parts(
-            tmp_encoder.encode(
-                tmp_signed_message[:nacl.bindings.crypto_sign_BYTES]),
-            tmp_encoder.encode(
-                tmp_signed_message[nacl.bindings.crypto_sign_BYTES:]),
+            tmp_signed_message[:crypto_sign_BYTES],
+            tmp_signed_message[crypto_sign_BYTES:],
             tmp_signed_message)
-    except:
+    except (TypeError, BinasciiError):
         abort(400,
               message="The provided signed_message is not valid.")
 
