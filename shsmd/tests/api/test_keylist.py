@@ -96,8 +96,7 @@ class KeyListTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 200
-        assert 'device_public_keys' in response.keys()
-        assert len(response['device_public_keys']) == 0
+        assert len(response) == 0
 
     def test_fetch_key_valid(self):
         username = 'testuser'
@@ -113,8 +112,7 @@ class KeyListTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 200
-        assert 'device_public_keys' in response.keys()
-        assert util.reconstruct_signed_message(response['device_public_keys'][0]).message == public_key
+        assert util.reconstruct_signed_message(response[0]).message == public_key
 
     def test_fetch_key_valid_multiple(self):
         username = 'testuser'
@@ -136,7 +134,5 @@ class KeyListTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 200
-        assert 'device_public_keys' in response.keys()
-        assert valid_device1_public_key in response['device_public_keys']
-        assert valid_device2_public_key in response['device_public_keys']
-
+        assert valid_device1_public_key in response
+        assert valid_device2_public_key in response

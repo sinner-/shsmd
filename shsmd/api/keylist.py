@@ -1,6 +1,3 @@
-""" shsmd
-"""
-
 from flask_restful import Resource
 from flask_restful import reqparse
 from flask_restful import abort
@@ -11,28 +8,22 @@ from shsmd.db.mysql import query_db
 from shsmd.common.util import reconstruct_signed_message
 
 class KeyList(Resource):
-    """ flask restful class for fetching the list of each
-        device_public_key associated with a user.
-
-        Currently only handles fetching of keys via HTTP POST.
+    """ flask restful class for fetching device_public_keys associated with a users devices.
     """
 
     def post(self):
-        """ key fetching method.
+        """ HTTP POST method for KeyList
 
             Args:
-                device_verify_key    (str): NaCl verification key for the device the user
-                is sending the query as.
-                destination_username (str): base64 encoded, signed destination username.
+                device_verify_key    (str): signed device_verify_key to authenticate client.
+                destination_username (str): signed destination username.
 
             Returns:
-                HTTP 422: If the device_verify_key provided by the user does not exist.
+                HTTP 400    : If device_verify_key or destination_username is not provided.
+                HTTP 400    : If destination_username is not signed by the correct client.
+                HTTP 422    : If the device_verify_key provided by the user does not exist.
 
-                HTTP 400: If the provided destination_username is not signed by the
-                correct device_verify_key provided during device registration.
-
-                device_public_keys (dict): A dictionary containing the list of all
-                device_public_key entries that corresponded to the requested user.
+                (dict)      : List of all device_public_key entries for the requested user.
 
         """
 
@@ -47,7 +38,7 @@ class KeyList(Resource):
                             help="destination_username is either blank or incorrect type.")
         args = parser.parse_args()
 
-        #check if user exists already
+        #check to make sure clients device exists.
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
@@ -61,12 +52,14 @@ class KeyList(Resource):
 
         device_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
+        #signature based authentication of the request
         try:
             device_verify_key.verify(destination_username)
         except BadSignatureError:
             abort(400,
                   message="Signature for provided username is corrupt or invalid.")
 
+        #fetch the requested keys from DBMS
         device_public_keys = []
         for verify_key in query_db('''
                                    SELECT device_verify_key
@@ -81,4 +74,4 @@ class KeyList(Resource):
                            one=True)
             device_public_keys.append(row[0])
 
-        return {'device_public_keys': device_public_keys}
+        return device_public_keys
