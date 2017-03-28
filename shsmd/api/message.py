@@ -108,7 +108,7 @@ class Message(Resource):
         if not isinstance(user_list, list):
             abort(400, message="Provided destination_usernames must be a list.")
 
-        message_id = b64encode(message_contents.signature)
+        message_id = message_public_key.message
         query_db('''
                  INSERT INTO messages
                  VALUES(%s, %s, %s, %s);''',
