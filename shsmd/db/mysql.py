@@ -82,7 +82,6 @@ def create_schema():
             message_id VARCHAR(65) NOT NULL,
             FOREIGN KEY(message_id) REFERENCES messages(message_id));
         CREATE INDEX users_username ON users (username);
-        CREATE INDEX devices_username ON devices (username);
         CREATE INDEX devices_verify_key ON devices (device_verify_key);
         CREATE INDEX recipients_verify_key ON message_recipients (device_verify_key);
         CREATE INDEX messages_message_id ON messages (message_id);
@@ -99,7 +98,6 @@ def drop_schema():
         DROP INDEX IF EXISTS messages_message_id ON messages;
         DROP INDEX IF EXISTS recipients_verify_key ON message_recipients;
         DROP INDEX IF EXISTS devices_verify_key ON devices;
-        DROP INDEX IF EXISTS devices_username ON devices;
         DROP INDEX IF EXISTS users_username ON users;
         DROP TABLE IF EXISTS message_recipients;
         DROP TABLE IF EXISTS messages;
