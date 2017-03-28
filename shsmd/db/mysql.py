@@ -84,6 +84,8 @@ def create_schema():
         CREATE INDEX users_username ON users (username);
         CREATE INDEX devices_username ON devices (username);
         CREATE INDEX devices_verify_key ON devices (device_verify_key);
+        CREATE INDEX recipients_verify_key ON message_recipients (device_verify_key);
+        CREATE INDEX messages_message_id ON messages (message_id);
     '''
 
     with app.app_context():
