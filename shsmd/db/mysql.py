@@ -95,10 +95,6 @@ def drop_schema():
     """
 
     tables = '''
-        DROP INDEX IF EXISTS messages_message_id ON messages;
-        DROP INDEX IF EXISTS recipients_verify_key ON message_recipients;
-        DROP INDEX IF EXISTS devices_verify_key ON devices;
-        DROP INDEX IF EXISTS users_username ON users;
         DROP TABLE IF EXISTS message_recipients;
         DROP TABLE IF EXISTS messages;
         DROP TABLE IF EXISTS pubkeys;
