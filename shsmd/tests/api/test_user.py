@@ -6,15 +6,6 @@ import json
 
 class UserTestCase(common.ShsmdTestCase):
 
-    def test_register_user_empty_user(self):
-        rv = self.register_user(None, None)
-        assert isinstance(rv, flask.wrappers.Response)
-        response = json.loads(rv.data.decode('utf-8'))
-        assert rv.status_code == 400
-        assert 'message' in response.keys()
-        assert 'username' in response['message'].keys()
-        assert response['message']['username'] == "username is either blank or incorrect type."
-
     def test_register_user_empty_key(self):
         rv = self.register_user('testuser', None)
         assert isinstance(rv, flask.wrappers.Response)
@@ -39,7 +30,7 @@ class UserTestCase(common.ShsmdTestCase):
         assert isinstance(rv, flask.wrappers.Response)
         response = json.loads(rv.data.decode('utf-8'))
         assert rv.status_code == 201
-        assert response == username
+        assert response == "User %s registered successfully." % username
 
     def test_register_user_existing_username(self):
         test_key = SigningKey.generate().verify_key.encode(encoder=HexEncoder).decode('utf-8')

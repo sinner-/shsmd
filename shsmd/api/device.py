@@ -14,11 +14,10 @@ class Device(Resource):
     """
 
     @staticmethod
-    def post():
-        """ HTTP POST method for Device.
+    def put(username, device_id):
+        """ HTTP PUT method for Device.
 
             Args:
-                username          (str): Username the device will be registered against.
                 device_verify_key (str): device_verify_key for the device.
 
             Returns:
@@ -31,10 +30,6 @@ class Device(Resource):
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('username',
-                            type=str,
-                            required=True,
-                            help="username is either blank or incorrect type.")
         parser.add_argument('device_verify_key',
                             type=str,
                             required=True,
@@ -46,18 +41,24 @@ class Device(Resource):
                               SELECT master_verify_key
                               FROM users
                               WHERE username = %s;''',
-                              (args['username'],),
+                              (username,),
                               one=True)
         if stored_key is None:
             abort(422, message="Username does not exist.")
 
         #check if device_verify_key is a valid VerifyKey
         signed_device_verify_key = reconstruct_signed_message(args['device_verify_key'])
+        device_verify_key = signed_device_verify_key.message
         try:
-            VerifyKey(signed_device_verify_key.message, encoder=HexEncoder)
+            VerifyKey(device_verify_key, encoder=HexEncoder)
         except (TypeError, BinasciiError):
             abort(400,
                   message="The provided device_verify_key is not valid.")
+
+        device_verify_key = device_verify_key.decode('utf-8')
+        if device_id != device_verify_key:
+            abort(400,
+                  message="The device_verify_key does not match supplied device ID.")
 
         master_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
@@ -69,12 +70,11 @@ class Device(Resource):
                   message="Signature for device_verify_key is corrupt or invalid.")
 
         #register device into DBMS
-        device_verify_key = signed_device_verify_key.message.decode('utf-8')
         query_db('''
                  INSERT INTO devices
                  VALUES(%s, %s);''',
                  (device_verify_key,
-                  args['username']))
+                  username))
         get_db().commit()
 
-        return device_verify_key, 201
+        return "Device %s registered successfully." % device_verify_key, 201

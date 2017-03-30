@@ -1,5 +1,5 @@
 from binascii import Error as BinasciiError
-import json
+from json import loads
 from base64 import b64encode
 from flask_restful import Resource
 from flask_restful import reqparse
@@ -101,7 +101,7 @@ class Message(Resource):
             abort(400, message="Signature for provided message_public_key is corrupt or invalid.")
 
         try:
-            user_list = json.loads(destination_usernames.message.decode('utf-8'))
+            user_list = loads(destination_usernames.message.decode('utf-8'))
         except ValueError:
             abort(400, message="Provided destination_usernames must be JSON encapsulated.")
 

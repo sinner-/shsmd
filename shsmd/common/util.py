@@ -17,6 +17,8 @@ def reconstruct_signed_message(signed_message):
             tmp_signed_message[:crypto_sign_BYTES],
             tmp_signed_message[crypto_sign_BYTES:],
             tmp_signed_message)
+        if len(recon_signed_message.message) == 0:
+            raise TypeError
     except (TypeError, BinasciiError):
         abort(400,
               message="The provided signed_message is not valid.")

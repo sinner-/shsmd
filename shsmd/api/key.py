@@ -15,11 +15,11 @@ class Key(Resource):
     """
 
     @staticmethod
-    def post():
-        """ HTTP POST method for Key.
+    def put(username, key_id):
+        """ HTTP PUT method for Key.
 
             Args:
-                device_verify_key (str): device_verify_key for the device.
+                device-verify-key (str): device_verify_key for the device.
                 device_public_key (str): device_public_key for the device.
 
             Returns:
@@ -32,7 +32,8 @@ class Key(Resource):
         """
 
         parser = reqparse.RequestParser()
-        parser.add_argument('device_verify_key',
+        parser.add_argument('device-verify-key',
+                            location='headers',
                             type=str,
                             required=True,
                             help="device_verify_key is either blank or incorrect type.")
@@ -46,25 +47,31 @@ class Key(Resource):
         stored_key = query_db('''
                               SELECT device_verify_key
                               FROM devices
-                              WHERE device_verify_key = %s;''',
-                              (args['device_verify_key'],),
+                              WHERE device_verify_key = %s
+                              AND username = %s;''',
+                              (args['device-verify-key'],
+                               username),
                               one=True)
         if stored_key is None:
             abort(422, message="Device does not exist.")
 
         #check if device_public_key is a valid PublicKey
-        signed_device_public_key = reconstruct_signed_message(args['device_public_key'])
+        device_public_key = reconstruct_signed_message(args['device_public_key'])
         try:
-            PublicKey(signed_device_public_key.message, encoder=HexEncoder)
+            PublicKey(device_public_key.message, encoder=HexEncoder)
         except (TypeError, BinasciiError):
             abort(400,
                   message="The provided device_public_key is not valid.")
+
+        if key_id != device_public_key.message.decode('utf-8'):
+            abort(400,
+                  message="The device_public_key does not match supplied key ID.")
 
         device_verify_key = VerifyKey(stored_key[0], encoder=HexEncoder)
 
         #signature based authentication of the request
         try:
-            device_verify_key.verify(signed_device_public_key)
+            device_verify_key.verify(device_public_key)
         except BadSignatureError:
             abort(400,
                   message="Signature for device_public_key is corrupt or invalid.")
@@ -74,7 +81,7 @@ class Key(Resource):
                  INSERT INTO pubkeys
                  VALUES(%s, %s);''',
                  (args['device_public_key'],
-                  args['device_verify_key']))
+                  args['device-verify-key']))
         get_db().commit()
 
-        return signed_device_public_key.message.decode('utf-8'), 201
+        return "Key %s registered successfully." % device_public_key.message.decode('utf-8'), 201
